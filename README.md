@@ -14,7 +14,7 @@ Code Prism is basically a code review program. but it's simple to use and includ
 
 **_Enjoy!_**
 
-![demo](./asset/code-prism-demo.gif)
+![demo](./assets/code-prism-demo.gif)
 
 ## 🔗 Concept
 

@@ -2,7 +2,6 @@
 .vscode-test/**
 .gitignore
 .yarnrc
-vsc-extension-quickstart.md
 **/tsconfig.json
 **/.eslintrc.json
 **/*.map
@@ -11,5 +10,4 @@ vsc-extension-quickstart.md
 .prism
 src/**
 doc/**
-previewer/**
-asset/code-prism-demo.gif
+

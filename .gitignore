@@ -6,5 +6,3 @@ package-lock.json
 *.vsix
 .prism
 doc/**
-!doc/*.md
-previewer/**
