@@ -145,7 +145,7 @@ export class DefinitionViewProvider implements vscode.WebviewViewProvider {
 
     webviewView.webview.options = {
       enableScripts: true,
-      localResourceRoots: [vscode.Uri.joinPath(this.extensionUri, 'asset')],
+      localResourceRoots: [vscode.Uri.joinPath(this.extensionUri, 'assets')],
     }
 
     // 웹뷰의 HTML 콘텐츠 설정
@@ -188,10 +188,10 @@ export class DefinitionViewProvider implements vscode.WebviewViewProvider {
    * - A Content Security Policy (CSP) that restricts sources for styles, scripts, and images.
    */
   private getHtmlForWebview(webview: vscode.Webview) {
-    const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'asset', 'main.js'))
-    const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'asset', 'main.css'))
-    const prismJs = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'asset', 'prism.js'))
-    const prismCss = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'asset', 'prism.css'))
+    const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'assets', 'main.js'))
+    const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'assets', 'main.css'))
+    const prismJs = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'assets', 'prism.js'))
+    const prismCss = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'assets', 'prism.css'))
 
     const nonce = getNonce()
 
