@@ -1,0 +1,412 @@
+{
+  "name": "codeprism",
+  "displayName": "CodePrism",
+  "description": "Source code analysis tool",
+  "version": "1.0.0",
+  "publisher": "NegahamaOrg",
+  "author": "Samuel Kang",
+  "homepage": "https://github.com/negahama/NegahamaOrg.CodePrism",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.87.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "Other"
+  ],
+  "bugs": {
+    "url": "https://github.com/negahama/NegahamaOrg.CodePrism/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/negahama/NegahamaOrg.CodePrism.git"
+  },
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "icon": "assets/logo.png",
+  "contributes": {
+    "commands": [
+      {
+        "category": "Code Prism",
+        "command": "CodePrism.command.showPrismFile",
+        "title": "Show prism file",
+        "icon": "$(open-preview)"
+      },
+      {
+        "category": "Code Prism",
+        "command": "CodePrism.command.deletePrismFile",
+        "title": "Delete prism file",
+        "icon": "$(trash)"
+      },
+      {
+        "category": "Code Prism",
+        "command": "CodePrism.command.addIssue.controller",
+        "title": "Add new issue",
+        "icon": "$(add)"
+      },
+      {
+        "category": "Code Prism",
+        "command": "CodePrism.command.addIssue.context",
+        "title": "Add new issue",
+        "icon": "$(add)"
+      },
+      {
+        "category": "Code Prism",
+        "command": "CodePrism.command.addIssue.cancel",
+        "title": "Cancel"
+      },
+      {
+        "category": "Code Prism",
+        "command": "CodePrism.command.gotoIssue",
+        "title": "Goto this issue",
+        "icon": "$(go-to-file)"
+      },
+      {
+        "category": "Code Prism",
+        "command": "CodePrism.command.deleteIssue",
+        "title": "Delete this issue",
+        "icon": "$(trash)"
+      },
+      {
+        "category": "Code Prism",
+        "command": "CodePrism.command.addNote",
+        "title": "Add new note to issue",
+        "enablement": "!commentIsEmpty"
+      },
+      {
+        "category": "Code Prism",
+        "command": "CodePrism.command.addNote.cancel",
+        "title": "Cancel"
+      },
+      {
+        "category": "Code Prism",
+        "command": "CodePrism.command.editNote",
+        "title": "Edit this note",
+        "icon": "$(edit)"
+      },
+      {
+        "category": "Code Prism",
+        "command": "CodePrism.command.deleteNote",
+        "title": "Delete this note",
+        "icon": "$(trash)"
+      },
+      {
+        "category": "Code Prism",
+        "command": "CodePrism.command.saveNote",
+        "title": "Save this note",
+        "icon": "$(save)"
+      },
+      {
+        "category": "Code Prism",
+        "command": "CodePrism.command.saveNote.cancel",
+        "title": "Cancel"
+      },
+      {
+        "category": "Code Prism",
+        "command": "CodePrism.command.prismView.collapseAll",
+        "title": "Collapse All",
+        "icon": "$(collapse-all)"
+      },
+      {
+        "category": "Code Prism",
+        "command": "CodePrism.command.prismView.expandAll",
+        "title": "Expand All",
+        "icon": "$(expand-all)"
+      },
+      {
+        "category": "Code Prism",
+        "command": "CodePrism.command.prismView.reload",
+        "title": "Reload",
+        "icon": "$(refresh)"
+      },
+      {
+        "category": "Code Prism",
+        "command": "CodePrism.command.definitionView.pin",
+        "title": "Pin Current Definition",
+        "icon": "$(pin)"
+      },
+      {
+        "category": "Code Prism",
+        "command": "CodePrism.command.definitionView.unpin",
+        "title": "Unpin Current Definition",
+        "icon": "$(pinned)"
+      },
+      {
+        "category": "Code Prism",
+        "command": "CodePrism.command.setPrismFolder",
+        "title": "Set Prism Folder Location"
+      },
+      {
+        "category": "Code Prism",
+        "command": "CodePrism.command.OpenMermaidView",
+        "title": "Open Mermaid Preview"
+      },
+      {
+        "category": "Code Prism",
+        "command": "CodePrism.command.OpenRelativeDoc",
+        "title": "Show Document Preview"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "CodePrism",
+          "title": "Code Prism",
+          "icon": "assets/logo.png"
+        }
+      ]
+    },
+    "views": {
+      "CodePrism": [
+        {
+          "id": "CodePrism.view.prismView",
+          "name": "Code Prisms",
+          "when": "editorIsOpen"
+        },
+        {
+          "id": "CodePrism.view.definitionView",
+          "name": "Definition View",
+          "type": "webview",
+          "contextualTitle": "Code"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "CodePrism.view.prismView",
+        "contents": "No Prism File yet.\nThe prism file will be automatically made by...\n1. clicking the [+] button in editor view's left area\n2. selecting 'Add new issue' in editor view's context menu.\nTo learn more about how to use Code Prism in VS Code, please visit [here](https://github.com/negahama/NegahamaOrg.CodeDoc/issues)"
+      },
+      {
+        "view": "CodePrism.view.astView",
+        "contents": "Please open a file to parse."
+      },
+      {
+        "view": "CodePrism.view.astWelcome",
+        "contents": "try run `npm install -D typescript` and reload to enable."
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "CodePrism.command.showPrismFile",
+          "when": "false"
+        },
+        {
+          "command": "CodePrism.command.deletePrismFile",
+          "when": "false"
+        },
+        {
+          "command": "CodePrism.command.addIssue.controller",
+          "when": "false"
+        },
+        {
+          "command": "CodePrism.command.addIssue.context",
+          "when": "false"
+        },
+        {
+          "command": "CodePrism.command.addIssue.cancel",
+          "when": "false"
+        },
+        {
+          "command": "CodePrism.command.gotoIssue",
+          "when": "false"
+        },
+        {
+          "command": "CodePrism.command.deleteIssue",
+          "when": "false"
+        },
+        {
+          "command": "CodePrism.command.addNote",
+          "when": "false"
+        },
+        {
+          "command": "CodePrism.command.addNote.cancel",
+          "when": "false"
+        },
+        {
+          "command": "CodePrism.command.editNote",
+          "when": "false"
+        },
+        {
+          "command": "CodePrism.command.deleteNote",
+          "when": "false"
+        },
+        {
+          "command": "CodePrism.command.saveNote",
+          "when": "false"
+        },
+        {
+          "command": "CodePrism.command.saveNote.cancel",
+          "when": "false"
+        },
+        {
+          "command": "CodePrism.command.prismView.collapseAll",
+          "when": "false"
+        },
+        {
+          "command": "CodePrism.command.prismView.expandAll",
+          "when": "false"
+        },
+        {
+          "command": "CodePrism.command.prismView.reload",
+          "when": "false"
+        },
+        {
+          "command": "CodePrism.command.definitionView.pin",
+          "when": "false"
+        },
+        {
+          "command": "CodePrism.command.definitionView.unpin",
+          "when": "false"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "CodePrism.command.prismView.collapseAll",
+          "when": "view == CodePrism.view.prismView",
+          "group": "navigation"
+        },
+        {
+          "command": "CodePrism.command.prismView.expandAll",
+          "when": "view == CodePrism.view.prismView",
+          "group": "navigation"
+        },
+        {
+          "command": "CodePrism.command.prismView.reload",
+          "when": "view == CodePrism.view.prismView",
+          "group": "navigation"
+        },
+        {
+          "command": "CodePrism.command.definitionView.pin",
+          "when": "view == CodePrism.view.definitionView && !CodePrism.context.definitionView.isPinned",
+          "group": "navigation"
+        },
+        {
+          "command": "CodePrism.command.definitionView.unpin",
+          "when": "view == CodePrism.view.definitionView && CodePrism.context.definitionView.isPinned",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "CodePrism.command.showPrismFile",
+          "when": "view == CodePrism.view.prismView && viewItem == PrismItem",
+          "group": "inline"
+        },
+        {
+          "command": "CodePrism.command.deletePrismFile",
+          "when": "view == CodePrism.view.prismView && viewItem == PrismItem",
+          "group": "inline"
+        },
+        {
+          "command": "CodePrism.command.gotoIssue",
+          "when": "view == CodePrism.view.prismView && viewItem == IssueItem",
+          "group": "inline"
+        },
+        {
+          "command": "CodePrism.command.deleteIssue",
+          "when": "view == CodePrism.view.prismView && viewItem == IssueItem",
+          "group": "inline"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "CodePrism.command.addIssue.context",
+          "when": "editorTextFocus"
+        },
+        {
+          "command": "CodePrism.command.OpenRelativeDoc",
+          "when": "editorTextFocus"
+        }
+      ],
+      "comments/commentThread/title": [
+        {
+          "command": "CodePrism.command.deleteIssue",
+          "group": "navigation",
+          "when": "commentController == code-prism-issue-tracker && !commentThreadIsEmpty"
+        }
+      ],
+      "comments/commentThread/context": [
+        {
+          "command": "CodePrism.command.addNote",
+          "group": "inline",
+          "when": "commentController == code-prism-issue-tracker"
+        },
+        {
+          "command": "CodePrism.command.addNote.cancel",
+          "group": "inline",
+          "when": "commentController == code-prism-issue-tracker"
+        }
+      ],
+      "comments/comment/title": [
+        {
+          "command": "CodePrism.command.editNote",
+          "group": "group@1",
+          "when": "commentController == code-prism-issue-tracker"
+        },
+        {
+          "command": "CodePrism.command.deleteNote",
+          "group": "group@2",
+          "when": "commentController == code-prism-issue-tracker"
+        }
+      ],
+      "comments/comment/context": [
+        {
+          "command": "CodePrism.command.saveNote",
+          "group": "inline@1",
+          "when": "commentController == code-prism-issue-tracker"
+        },
+        {
+          "command": "CodePrism.command.saveNote.cancel",
+          "group": "inline@2",
+          "when": "commentController == code-prism-issue-tracker"
+        }
+      ]
+    },
+    "configuration": [
+      {
+        "type": "object",
+        "title": "Code Prism",
+        "properties": {
+          "CodePrism.config.PrismFolder": {
+            "type": "string",
+            "default": ".prism",
+            "": "Folder Name for Prism Files"
+          }
+        }
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/glob": "^8.1.0",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "18.x",
+    "@types/prismjs": "^1.26.4",
+    "@types/vscode": "^1.87.0",
+    "@typescript-eslint/eslint-plugin": "^7.4.0",
+    "@typescript-eslint/parser": "^7.4.0",
+    "@vscode/test-cli": "^0.0.8",
+    "@vscode/test-electron": "^2.3.9",
+    "eslint": "^8.57.0",
+    "glob": "^8.1.0",
+    "mocha": "^10.7.3",
+    "typescript": "^5.3.3",
+    "vscode-test": "^1.6.1"
+  },
+  "dependencies": {
+    "marked": "^14.1.3",
+    "prismjs": "^1.29.0"
+  }
+}
