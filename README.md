@@ -33,6 +33,10 @@ The prism file and the document correspond one-to-one, and one prism file may co
 
 ## 🔗 Release Notes
 
+### 1.0.4
+
+bug fixed : fixed the bug that couldn't search the documents relatived source code
+
 ### 1.0.0
 
 Initial release

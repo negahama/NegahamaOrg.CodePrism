@@ -51,7 +51,10 @@ export class IssueItem extends vscode.TreeItem {
    */
   constructor(public readonly prism: Prism, public readonly issue: Issue, public readonly parent: PrismItem) {
     // 표시되어질 label은 issue의 title이 아니라 issue의 첫번째 description context이다.
-    const label = issue.notes[0].context
+    let label = issue.title
+    if (issue.notes && issue.notes.length > 0) {
+      label = issue.notes[0].context
+    }
     // IssueItem은 자식을 가지지 않으므로 vscode.TreeItemCollapsibleState.None을 사용한다.
     super(label, vscode.TreeItemCollapsibleState.None)
     // tooltip은 issue의 title을 사용한다.

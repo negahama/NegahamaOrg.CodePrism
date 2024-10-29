@@ -66,33 +66,34 @@ export async function docdetector_activate(context: vscode.ExtensionContext) {
    * The linked documents' URIs are adjusted if they are relative paths, and their content is retrieved.
    */
   const getLinkedDocInfo = (uri: vscode.Uri): LinkedDoc[] => {
+    const linkedFiles: string[] = []
+    const rootFolder = PrismFileManager.getWorkspacePath()
+    const prismFolder = PrismFileManager.getPrismFolderPath()
+
     //todo 이렇게 매번 계산하면 안된다.
-    const result: [source: string, linkedFile: string][] = []
-    // md file과 연결되어진 코드 파일들을 모두 읽어서 저장한다.
+    // uri를 소스로 하는 모든 issue에서 언급된 파일들을 모두 리턴한다.
     PrismManager.getAllPrisms().forEach(prism => {
       prism.issues.forEach(issue => {
-        issue.notes.forEach(note => {
-          if (note.link) {
-            result.push([issue.source.file, note.link])
-          }
-        })
+        const path = vscode.Uri.file(rootFolder + issue.source.file)
+        if (path.fsPath === uri.fsPath) {
+          issue.notes.forEach(note => {
+            if (note.link) {
+              linkedFiles.push(note.link)
+            }
+          })
+        }
       })
     })
 
-    const prismFolder = PrismFileManager.getPrismFolderPath()
-
     // result에서 현재 소스 파일과 연관된 파일들을 찾아서 linkedDocs에 저장한다.
-    return result
-      .filter(e => e[0] === uri.fsPath)
-      .map(e => {
-        const linked = e[1]
-        let uri = vscode.Uri.file(linked)
-        if (linked.startsWith('file:///./')) {
-          uri = vscode.Uri.file(prismFolder + linked.replace('file:///./', '/'))
-        }
+    return linkedFiles.map(linked => {
+      let uri = vscode.Uri.file(linked)
+      if (linked.startsWith('file:///./')) {
+        uri = vscode.Uri.file(prismFolder + linked.replace('file:///./', '/'))
+      }
 
-        return { uri, content: getLinkedDocContent(uri) }
-      })
+      return { uri, content: getLinkedDocContent(uri) }
+    })
   }
 
   // enable hover for all the relevant code files

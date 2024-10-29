@@ -48,11 +48,11 @@ export class PrismViewer {
    * - Iterates through all issues in the Prism object and opens their source files.
    * - Creates a webview panel to display the Prism file.
    * - Adds a message handler to the webview to handle commands such as:
-   *   - `removeDescription`: Removes a description from a issue and updates the Prism file.
+   *   - `appendNote`: Appends a note to a issue.
+   *   - `removeNote`: Removes a note from a issue and updates the Prism file.
    *   - `createOrOpenLink`: Creates or opens a Markdown file associated with the Prism.
-   *   - `appendDescription`: Appends a description to a issue.
    *
-   * @param prism The Prism object containing issues and descriptions.
+   * @param prism The Prism object containing issues and notes.
    * @param issue Optional. The specific issue to open and navigate to.
    */
   static async showPrismViewer(prism: Prism, issue?: Issue) {
@@ -174,9 +174,9 @@ export class PrismViewer {
   /**
    * Opens a markdown file in a preview pane beside the current editor.
    *
-   * @param issue - The issue object containing the description with a link to the markdown file.
+   * @param issue - The issue object containing the note with a link to the markdown file.
    *
-   * The function converts a relative file path from the issue's description to an absolute path,
+   * The function converts a relative file path from the issue's note to an absolute path,
    * creates a VS Code URI from the absolute path, and then executes the `markdown.showPreview`
    * command to open the markdown file in a preview pane beside the current editor.
    */
@@ -225,11 +225,11 @@ export class PrismViewer {
           padding: 5px;
           cursor: pointer;
         }
-        .delete-button {
-          background-color: red;
-        }
         .append-button {
           background-color: blue;
+        }
+        .delete-button {
+          background-color: red;
         }
       </style>
     </head>
@@ -242,14 +242,14 @@ export class PrismViewer {
   }
 
   /**
-   * Generates an HTML article containing issues and their descriptions.
+   * Generates an HTML article containing issues and their notes.
    *
    * This method constructs an HTML string that represents a collection of issues.
-   * Each issue includes its title, source information, and a list of descriptions.
-   * Each description includes details such as category, importance, creation date,
+   * Each issue includes its title, source information, and a list of notes.
+   * Each note includes details such as category, importance, creation date,
    * and a link to create or open a markdown file.
    *
-   * @returns {string} An HTML string representing the issues and their descriptions.
+   * @returns {string} An HTML string representing the issues and their notes.
    */
   static getArticle(): string {
     const getIssue = (issue: Issue) => {
@@ -262,9 +262,9 @@ export class PrismViewer {
         ${issue.notes.map(note => {
           const safeId = `'${note.id}'` //encodeURIComponent(desc.id).substring(0, 8)
           return `
-            <div class="description" id="desc-${note.id}">
+            <div class="note" id="note-${note.id}">
               <h3>Note : ${safeId}</h3>
-              <button class="common-button delete-button" onclick="deleteDescription(${safeId})">Delete Description</button>
+              <button class="common-button delete-button" onclick="deleteNote(${safeId})">Delete note</button>
               <div><ul>
                 <li>category: ${note.category}</li>
                 <li>importance: ${note.importance}</li>
@@ -276,21 +276,21 @@ export class PrismViewer {
               context: ${getDesc(note.context)}
             </div>
           `}).join('')}
-        <button class="common-button append-button" onclick="appendDescription(${issue.id})">New Description</button>
+        <button class="common-button append-button" onclick="appendNote(${issue.id})">New note</button>
       `
       // const markdown = new vscode.MarkdownString()
       // markdown.appendMarkdown(`## Issue: ${issue.title}\n`)
       // markdown.appendMarkdown(
       //   issue.source ? `Source: ${issue.source.file}(line: ${issue.source.startLine})\n` : 'Source: N/A\n'
       // )
-      // issue.descriptions.forEach(desc => {
-      //   markdown.appendMarkdown(`### Description: ${desc.id}\n`)
-      //   markdown.appendMarkdown(`- category: ${desc.category}\n`)
-      //   markdown.appendMarkdown(`- importance: ${desc.importance}\n`)
-      //   markdown.appendMarkdown(`- createdAt: ${desc.createdAt}\n`)
+      // issue.notes.forEach(note => {
+      //   markdown.appendMarkdown(`### Note: ${note.id}\n`)
+      //   markdown.appendMarkdown(`- category: ${note.category}\n`)
+      //   markdown.appendMarkdown(`- importance: ${note.importance}\n`)
+      //   markdown.appendMarkdown(`- createdAt: ${note.createdAt}\n`)
 
       //   markdown.appendText('\n\n')
-      //   const lines = desc.context.split('\n')
+      //   const lines = note.context.split('\n')
       //   lines.forEach(line => {
       //     markdown.appendMarkdown(`> ${line}\n`)
       //   })
@@ -324,9 +324,9 @@ export class PrismViewer {
    * Generates an HTML script string that includes functions for interacting with VS Code API.
    *
    * The script includes the following functions:
-   * - `deleteDescription(id)`: Removes a description element by its ID and sends a message to VS Code to remove the description.
+   * - `appendNote()`: Sends a message to VS Code to append a note.
+   * - `deleteNote(id)`: Removes a note element by its ID and sends a message to VS Code to remove the note.
    * - `createOrOpenLink(id)`: Logs the action and sends a message to VS Code to create or open a link.
-   * - `appendDescription()`: Sends a message to VS Code to append a description.
    *
    * @returns {string} The HTML script string.
    */
@@ -334,49 +334,53 @@ export class PrismViewer {
     return `
       <script>
         const vscode = acquireVsCodeApi();
-        function deleteDescription(id) {
-          const descElement = document.getElementById('desc-' + id);
-          if (descElement) {
-            descElement.remove();
+        function appendNote() {
+          vscode.postMessage({ command: 'appendNote', id });
+        }
+        function deleteNote(id) {
+          const noteElement = document.getElementById('note-' + id);
+          if (noteElement) {
+            noteElement.remove();
           }
-          vscode.postMessage({ command: 'removeDescription', id });
+          vscode.postMessage({ command: 'removeNote', id });
         }
         function createOrOpenLink(id) {
           vscode.postMessage({ command: 'createOrOpenLink', id });
-        }
-        function appendDescription() {
-          vscode.postMessage({ command: 'appendDescription', id });
         }
       </script>`
   }
 
   /**
-   * Retrieves a issue and its corresponding description by the description ID.
+   * Retrieves a issue and its corresponding note by the note ID.
    *
-   * @param descId - The ID of the description to find.
-   * @returns An object containing the issue and description if found, otherwise `undefined`.
+   * @param noteId - The ID of the note to find.
+   * @returns An object containing the issue and note if found, otherwise `undefined`.
    */
-  static getIssueAndDescByDescId(descId: string): { issue: Issue; desc: Note } | undefined {
+  static getIssueAndNoteByNoteId(noteId: string): { issue: Issue; note: Note } | undefined {
     for (const issue of this.prism.issues) {
-      const desc = issue.notes.find(n => n.id === descId)
-      if (desc) {
-        return { issue: issue, desc }
+      const note = issue.notes.find(n => n.id === noteId)
+      if (note) {
+        return { issue, note }
       }
     }
     return undefined
   }
 
   static onReceiveMessage(message: any) {
-    const result = this.getIssueAndDescByDescId(message.id)
+    const result = this.getIssueAndNoteByNoteId(message.id)
     if (!result) {
       return
     }
 
     switch (message.command) {
-      case 'removeDescription':
+      case 'appendNote':
+        vscode.window.showInformationMessage(message.command + `: ${message.id}`)
+        this.prism.issues.filter(issue => issue.id !== message.id)
+        break
+      case 'removeNote':
         // prism 파일 자체를 업데이트한다.
-        // message.id에 해당하는 description을 가지고 있는 issue를 찾아서 해당 description을 제거한다.
-        vscode.window.showInformationMessage(message.command + `: found-${result.desc.id}`)
+        // message.id에 해당하는 note을 가지고 있는 issue를 찾아서 해당 note을 제거한다.
+        vscode.window.showInformationMessage(message.command + `: found-${result.note.id}`)
         this.prism.removeNote(result.issue.id, message.id)
         PrismManager.updatePrism(this.prism)
 
@@ -389,12 +393,12 @@ export class PrismViewer {
         // PrismManager.createMarkdownFile()는 파일이 이미 있으면 생성하지 않고 false를 리턴한다.
         const exist = !PrismFileManager.createMarkdownFile(message.id, this.prism, result.issue)
         if (!exist) {
-          // 파일이 새로 생성되었을 경우에는 description의 link를 업데이트한다.
+          // 파일이 새로 생성되었을 경우에는 note의 link를 업데이트한다.
           this.prism.issues.forEach(issue => {
-            const desc = issue.notes.find(n => n.id === message.id)
-            if (desc) {
+            const note = issue.notes.find(n => n.id === message.id)
+            if (note) {
               const link = 'file:///./docs/' + message.id + '.md'
-              this.prism.updateNote(issue.id, { link, ...desc })
+              this.prism.updateNote(issue.id, { link, ...note })
               PrismManager.updatePrism(this.prism)
 
               this.panel.webview.html = this.getWebviewContent(this.prism)
@@ -402,10 +406,6 @@ export class PrismViewer {
           })
         }
         this.openMarkdownFile(message.id)
-        break
-      case 'appendDescription':
-        vscode.window.showInformationMessage(message.command + `: ${message.id}`)
-        this.prism.issues.filter(issue => issue.id !== message.id)
         break
     }
   }
