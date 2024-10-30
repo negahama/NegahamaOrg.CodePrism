@@ -33,13 +33,15 @@ The prism file and the document correspond one-to-one, and one prism file may co
 
 ## 🔗 Release Notes
 
+### 1.0.5
+
+1. fix the bug that is malfunction of cancel button when input issue in comment controller.
+2. implement to show the link information when comment is shown in comment controller.
+3. and so on
+
 ### 1.0.4
 
 bug fixed : fixed the bug that couldn't search the documents relatived source code
-
-### 1.0.0
-
-Initial release
 
 ---
 
