@@ -44,20 +44,9 @@
       },
       {
         "category": "Code Prism",
-        "command": "CodePrism.command.addIssue.controller",
-        "title": "Add new issue",
-        "icon": "$(add)"
-      },
-      {
-        "category": "Code Prism",
         "command": "CodePrism.command.addIssue.context",
         "title": "Add new issue",
         "icon": "$(add)"
-      },
-      {
-        "category": "Code Prism",
-        "command": "CodePrism.command.addIssue.cancel",
-        "title": "Cancel"
       },
       {
         "category": "Code Prism",
@@ -200,15 +189,7 @@
           "when": "false"
         },
         {
-          "command": "CodePrism.command.addIssue.controller",
-          "when": "false"
-        },
-        {
           "command": "CodePrism.command.addIssue.context",
-          "when": "false"
-        },
-        {
-          "command": "CodePrism.command.addIssue.cancel",
           "when": "false"
         },
         {

@@ -199,31 +199,12 @@ export class PrismCommands {
   }
 
   /**
-   * Adds a issue using the comment controller.
-   *
-   * @param reply - The comment reply object containing the issue details.
-   * @returns A promise that resolves when the issue has been added.
-   */
-  async addIssueByController(reply: vscode.CommentReply) {
-    this.commentController.addIssueByController(reply)
-  }
-
-  /**
    * Adds a issue to the specified context.
    *
    * @param uri - The URI of the context where the issue should be added.
    */
   addIssueByContext(uri: vscode.Uri) {
     this.commentController.addIssueByContext(uri)
-  }
-
-  /**
-   * Cancels the addition of a issue.
-   *
-   * @param desc - The description of the issue to be canceled.
-   */
-  cancelAddIssue(desc: NoteDescription) {
-    this.commentController.cancelAddIssue(desc)
   }
 
   /**
@@ -284,6 +265,15 @@ export class PrismCommands {
    */
   async addNote(reply: vscode.CommentReply) {
     this.commentController.addNote(reply)
+  }
+
+  /**
+   * Cancels the addition of a issue or note.
+   *
+   * @param reply - The description of the issue or note to be canceled.
+   */
+  cancelAddNote(reply: vscode.CommentReply) {
+    this.commentController.cancelAddNote(reply)
   }
 
   /**

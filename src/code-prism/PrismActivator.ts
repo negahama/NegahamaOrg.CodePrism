@@ -41,20 +41,8 @@ export function prism_activate(context: vscode.ExtensionContext) {
   )
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('CodePrism.command.addIssue.controller', (reply: vscode.CommentReply) => {
-      prismCommands.addIssueByController(reply)
-    })
-  )
-
-  context.subscriptions.push(
     vscode.commands.registerCommand('CodePrism.command.addIssue.context', (uri: vscode.Uri) => {
       prismCommands.addIssueByContext(uri)
-    })
-  )
-
-  context.subscriptions.push(
-    vscode.commands.registerCommand('CodePrism.command.addIssue.cancel', (comment: NoteDescription) => {
-      prismCommands.cancelAddIssue(comment)
     })
   )
 
@@ -76,6 +64,12 @@ export function prism_activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand('CodePrism.command.addNote', (reply: vscode.CommentReply) => {
       prismCommands.addNote(reply)
+    })
+  )
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('CodePrism.command.addNote.cancel', (reply: vscode.CommentReply) => {
+      prismCommands.cancelAddNote(reply)
     })
   )
 

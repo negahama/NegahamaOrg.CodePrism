@@ -204,16 +204,17 @@ export class PrismFileManager {
   }
 
   /**
-   * Creates a markdown file for the given prism.
+   * Creates a markdown file with the given name, associated with a specific Prism and Issue.
    *
-   * @param name - The name of the markdown file to be created.
-   * @param prism - An optional Prism object to be used for generating the markdown content.
+   * The method ensures that the necessary directories exist, and if the markdown file already exists, it returns `false`.
+   * If the file does not exist, it creates the file with a template content that includes a title, a description, and a link to the source code.
    *
-   * This method will create a 'docs' folder inside the prism folder if it does not exist.
-   * If a markdown file with the given name already exists, the method will return without making any changes.
-   * Otherwise, it will generate the markdown content using the PrismBuilder and write it to the new file.
+   * @param name - The name of the markdown file to be created (without the .md extension).
+   * @param prism - The Prism object associated with the markdown file.
+   * @param issue - The Issue object that provides source information for the markdown file.
+   * @returns A promise that resolves to `true` if the file was created successfully, or `false` if the file already exists.
    */
-  static async createMarkdownFile(name: string, prism?: Prism, issue?: Issue): Promise<boolean> {
+  static async createMarkdownFile(name: string, prism: Prism, issue: Issue): Promise<boolean> {
     const prismFolderPath = this.getPrismFolderPath()
     if (!fs.existsSync(prismFolderPath)) {
       fs.mkdirSync(prismFolderPath)
@@ -234,15 +235,24 @@ export class PrismFileManager {
     // 랜더링 후의 링크는 마크다운이 처리하지만 이전의 링크는 PrismLinkProvider에서 처리한다.
     // 소스 파일의 경로는 workspace root 기준 경로이고 마크다운의 특성상 workspace 경로는 '/'가 필요한데
     // 이미 그렇게 되어져 있기 때문에 그냥 사용하면 된다.
-    const title = prism ? prism.name : name
+
+    // 이 markdown 자체가 note와 관련이 있기 때문에 markdown title을 note의 context로 한다.
+    let title = 'untitled'
+    issue.notes.forEach(note => {
+      if (note.context) {
+        title = note.context
+      }
+    })
     let source = ''
     if (issue) {
       source = issue.source.file + '#' + issue.source.startLine + '-#' + issue.source.endLine
     }
 
-    const content = `# ${name}\n
-This is the markdown file for '${title}'.\n\n[code](${source}): ${PrismFileManager.getWorkspacePath()}${source}\n
-You can edit this file to add more information about ${title}.\n\n`
+    const content =
+      `# ${title}\n` +
+      `This is the markdown file for '${prism.name}'.\n\n` +
+      `[code](${source}): ${PrismFileManager.getWorkspacePath()}${source}\n` +
+      `You can edit this file to add more information about ${title}.\n\n`
 
     fs.writeFileSync(markdownFilePath, content)
     return true

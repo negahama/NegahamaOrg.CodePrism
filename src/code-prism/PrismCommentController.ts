@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 import * as path from 'path'
 
-import { Prism, uuid } from './Prism'
+import { Note, Prism, uuid } from './Prism'
 import { PrismManager, SubscribeType } from './PrismManager'
 import { PrismFileManager } from './PrismFileManager'
 import { IssueItem } from './PrismTreeProvider'
@@ -67,11 +67,10 @@ export class NoteDescription implements vscode.Comment {
  *
  * @method dispose - Disposes of the comment controller if it exists.
  * @method reload - Asynchronously loads Prism files and initializes comment threads for each issue.
- * @method addIssueByController - Adds a issue to the active text editor at the specified line and column.
  * @method addIssueByContext - Adds a issue to the active text editor at the specified line and column.
- * @method cancelAddIssue - Cancels the addition of a issue comment by removing it from the thread.
  * @method deleteIssue - Deletes a issue associated with the given comment thread.
  * @method addNote - Adds a description to a issue within a comment thread.
+ * @method cancelAddNote - Cancels the addition of a issue or note comment by removing it from the thread.
  * @method editNote - Edits a issue comment by setting its mode to `Editing`.
  * @method deleteNote - Deletes a issue comment from its thread.
  * @method saveNote - Saves the body of a issue comment and updates its mode to preview.
@@ -189,18 +188,7 @@ export class PrismCommentController {
       this.commentThreads.set(prism.name, [])
 
       prism.issues.forEach(async (issue): Promise<void> => {
-        const comments = issue.notes.map(note => {
-          return {
-            kind: note.category,
-            body: new vscode.MarkdownString(note.context),
-            mode: vscode.CommentMode.Preview,
-            // thread는 나중에 설정한다.
-            id: note.id,
-            label: note.createdAt,
-            savedBody: note.context,
-            author: { name: note.category },
-          }
-        })
+        const comments = issue.notes.map(note => this.convertNoteToComment(note))
 
         // 파일에 저장된 source의 line은 1 base이므로 실제 사용값인 0 base로 변경한다.
         const thread = this.commentController.createCommentThread(
@@ -212,6 +200,7 @@ export class PrismCommentController {
           comments
         )
 
+        // comment의 thread는 여기서 설정한다.
         thread.label = issue.title.trim()
         thread.comments.forEach(cmt => {
           const comment = cmt as NoteDescription
@@ -224,81 +213,6 @@ export class PrismCommentController {
       })
     })
     output.log('Loading Prism files... Done')
-  }
-
-  /**
-   *
-   * @param reply
-   * @returns
-   */
-  async addIssueByController(reply: vscode.CommentReply) {
-    vscode.window.showInformationMessage(`addIssueByController: ${reply.text}`)
-
-    const note = Prism.getDefaultNote(reply.text)
-
-    const newComment = new NoteDescription(
-      note.category,
-      reply.text,
-      vscode.CommentMode.Preview,
-      note.createdAt,
-      reply.thread
-    )
-    reply.thread.comments = [...reply.thread.comments, newComment]
-
-    const prismName = path.parse(reply.thread.uri.fsPath).name
-
-    // 이미 thread가 존재하므로 thread 중복 여부만 검사하고 추가해 준다.
-    //todo 이미 존재하는 thread가 아니라고 가정하고 있다.
-    if (this.commentThreads.has(prismName)) {
-      this.commentThreads.get(prismName)?.push(reply.thread)
-    }
-
-    // prism이 없으면 새로 만든다.
-    const prism = PrismManager.getPrism(prismName, true)
-    if (!prism) {
-      vscode.window.showErrorMessage('Failed to get Prism: ' + prismName)
-      return
-    }
-
-    const title = await this.getThreadTitle(reply.thread)
-    reply.thread.label = title
-
-    // issue가 없으면 새로 만든다.
-    let issue = prism.getIssueByTitle(title)
-    if (!issue) {
-      const source = reply.thread.uri.fsPath
-      prism.appendIssueDetails(title, source, reply.thread.range)
-      issue = prism.getIssueByTitle(title)
-    }
-    if (!issue) {
-      return
-    }
-
-    prism.appendNote(issue.id, note)
-    PrismManager.updatePrism(prism)
-  }
-
-  /**
-   * Retrieves the label for a given comment thread. If the thread does not have a label,
-   * it attempts to extract the label from the text document at the thread's location.
-   * If no label is found, it returns a default label.
-   *
-   * @param thread - The comment thread for which to retrieve the label.
-   * @returns A promise that resolves to the label of the comment thread.
-   */
-  private async getThreadTitle(thread: vscode.CommentThread): Promise<string> {
-    let title = thread.label
-    if (!title) {
-      await vscode.workspace.openTextDocument(thread.uri).then(doc => {
-        const range = doc.lineAt(thread.range.start.line).range
-        title = doc.getText(range) + ' in ' + thread.uri.fsPath + '#' + (thread.range.start.line + 1)
-      })
-    }
-    if (!title) {
-      return '# No title'
-    }
-
-    return title.trim()
   }
 
   /**
@@ -388,16 +302,8 @@ export class PrismCommentController {
     prism.appendNote(issue.id, note)
     PrismManager.updatePrism(prism)
 
-    const comment: NoteDescription = {
-      kind: note.category,
-      body: new vscode.MarkdownString(note.context),
-      mode: vscode.CommentMode.Preview,
-      // thread는 나중에 설정한다.
-      id: note.id,
-      label: note.createdAt,
-      savedBody: note.context,
-      author: { name: note.category },
-    }
+    // comment의 thread는 thread를 생성한 후 설정한다.
+    const comment = this.convertNoteToComment(note)
 
     // 이것 실제 사용되는 position이므로 0 base이므로 변경하지 않는다.
     const thread = this.commentController.createCommentThread(vscode.Uri.file(source), range, [comment])
@@ -406,24 +312,6 @@ export class PrismCommentController {
 
     if (this.commentThreads.has(prismName)) {
       this.commentThreads.get(prismName)?.push(thread)
-    }
-  }
-
-  /**
-   * Cancels the addition of a issue comment by removing it from the thread.
-   * If the thread has no more comments after removal, it disposes of the thread.
-   *
-   * @param desc - The issue comment to be removed.
-   */
-  cancelAddIssue(desc: NoteDescription) {
-    const thread = desc.thread
-    if (!thread) {
-      return
-    }
-    thread.comments = thread.comments.filter(cmt => (cmt as NoteDescription).id !== desc.id)
-
-    if (thread.comments.length === 0) {
-      thread.dispose()
     }
   }
 
@@ -484,6 +372,8 @@ export class PrismCommentController {
    * 4. Refreshes the Prism view in the UI.
    */
   async addNote(reply: vscode.CommentReply) {
+    vscode.window.showInformationMessage(`add note: ${reply.text}`)
+
     const note = Prism.getDefaultNote(reply.text)
 
     const newComment = new NoteDescription(
@@ -495,8 +385,23 @@ export class PrismCommentController {
     )
     reply.thread.comments = [...reply.thread.comments, newComment]
 
-    // prism이 없으면 새로 만든다.
     const prismName = path.parse(reply.thread.uri.fsPath).name
+
+    // addNote는 새로운 thread의 추가도 처리한다.
+    // comment controller에서는 comment와 thread를 처리의 목적에 따라서 자연스럽게 관리하고 있기 때문에
+    // 즉 comment와 thread를 따로따로 생성하지 않고 comment가 처음 추가되는 경우 thread도 같이 생성해 주기 때문에
+    // 여기서도 같은 방식으로 note를 추가할 때 thread, issue가 생성되어지지 않은 경우라면 생성까지 같이 처리한다.
+    // 이때 기존에 생성되어져 있는 thread와 새로 생성된 thread(처음 comment를 추가하려는 thread)를 구분할 수 있어야 한다.
+    const threads = this.commentThreads.get(prismName)
+    if (!threads) {
+      console.warn(`No comment thread: ${prismName}`)
+    } else {
+      if (!threads.find(thread => thread === reply.thread)) {
+        threads.push(reply.thread)
+      }
+    }
+
+    // prism이 없으면 새로 만든다.
     const prism = PrismManager.getPrism(prismName, true)
     if (!prism) {
       vscode.window.showErrorMessage('Failed to get Prism: ' + prismName)
@@ -516,8 +421,45 @@ export class PrismCommentController {
       return
     }
 
-    prism.appendNote(issue.id, note)
+    const context = this.extractLinkFromNoteContext(note)
+
+    prism.appendNote(issue.id, { ...note, context })
     PrismManager.updatePrism(prism)
+  }
+
+  /**
+   * Cancels the addition of a note in a comment thread.
+   *
+   * This method handles both issues and threads similarly to the `addNote` method.
+   * Unlike `deleteIssue` which deletes an existing issue, and `deleteNote` which deletes an existing note,
+   * this method deals with cases where the issue or note might not yet exist and is not strictly a deletion.
+   * However, there might be cases where cancellation necessitates deletion.
+   *
+   * If the thread does not exist, a warning is logged and the method returns early.
+   *
+   * If a note addition is cancelled, no further action is required.
+   * However, if this is the initial comment being added to the thread, the thread itself is disposed of.
+   * The determination of whether it is the initial comment is based on the length of `thread.comments`.
+   *
+   * @param reply - The `vscode.CommentReply` object containing the thread to be cancelled.
+   */
+  cancelAddNote(reply: vscode.CommentReply) {
+    // addNote와 마찬가지로 Issue와 Thread를 같이 처리한다.
+    // deleteIssue는 이미 존재하는 issue를 삭제하는 것이고 deleteNote도 이미 존재하는 note를 삭제하는 것인데 반해서
+    // 이것은 issue나 note가 아직 존재하지 않을 수도 있고 엄밀히 삭제하는 것도 아니다.
+    // 하지만 cancel됨으로써 삭제를 해야 하는 경우도 있을 수 있다.
+    const thread = reply.thread
+    if (!thread) {
+      console.warn('error in cancelAddNote: No thread')
+      return
+    }
+
+    // note를 추가하려다 취소한 경우에는 별도로 처리할 것이 없다.
+    // 하지만 이것이 처음 comment를 추가하려는 경우라면 thread를 삭제해야 한다.
+    // 처음 comment를 추가하려는 경우인지의 여부는 thread.comments.length로 확인한다.
+    if (thread.comments.length === 0) {
+      thread.dispose()
+    }
   }
 
   /**
@@ -641,7 +583,9 @@ export class PrismCommentController {
       note.context = typeof found.body === 'string' ? found.body : found.body.value
     }
 
-    prism.updateNote(issue.id, note)
+    const context = this.extractLinkFromNoteContext(note)
+
+    prism.updateNote(issue.id, { ...note, context })
     PrismManager.updatePrism(prism)
   }
 
@@ -664,5 +608,112 @@ export class PrismCommentController {
       }
       return cmt
     })
+  }
+
+  /**
+   * Retrieves the label for a given comment thread. If the thread does not have a label,
+   * it attempts to extract the label from the text document at the thread's location.
+   * If no label is found, it returns a default label.
+   *
+   * @param thread - The comment thread for which to retrieve the label.
+   * @returns A promise that resolves to the label of the comment thread.
+   */
+  private async getThreadTitle(thread: vscode.CommentThread): Promise<string> {
+    let title = thread.label
+    if (!title) {
+      await vscode.workspace.openTextDocument(thread.uri).then(doc => {
+        const range = doc.lineAt(thread.range.start.line).range
+        title = doc.getText(range) + ' in ' + thread.uri.fsPath + '#' + (thread.range.start.line + 1)
+      })
+    }
+    if (!title) {
+      return '# No title'
+    }
+
+    return title.trim()
+  }
+
+  /**
+   * Converts a `Note` object to a `NoteDescription` object.
+   *
+   * This method transforms a `Note` into a `NoteDescription` suitable for use in a comment system.
+   * It appends additional issue information (e.g., links) to the comment body.
+   *
+   * @param note - The `Note` object to be converted.
+   * @returns A `NoteDescription` object containing the converted note data.
+   */
+  private convertNoteToComment(note: Note): NoteDescription {
+    // note를 comment로 변환한다.
+    // 이때 comment에는 표시되지 않는 issue의 정보(예를들면 link)를 comment.body에 추가한다.
+    const body = this.appendLinkToNoteContext(note)
+    return {
+      kind: note.category,
+      body: new vscode.MarkdownString(body),
+      mode: vscode.CommentMode.Preview,
+      // thread는 나중에 설정한다.
+      id: note.id,
+      label: note.createdAt,
+      savedBody: body,
+      author: { name: note.category },
+    }
+  }
+
+  /**
+   * Appends a link to the note's context if it exists and ensures that the link is in an absolute path format.
+   *
+   * This method performs the following steps:
+   * 1. Extracts any existing links from the note's context and removes them.
+   * 2. If the note has a link, it processes the link to ensure it is in an absolute path format.
+   * 3. Adds the processed link to the result array in a markdown format.
+   *
+   * @param note - The note object which may contain a link and context information.
+   * @returns A string representing the modified note context with the appended link.
+   */
+  private appendLinkToNoteContext(note: Note) {
+    // comment controlller에서는 note의 링크가 표시되어지지 않기 때문에 이를 context에 추가해서 표시한다.
+    // 또한 note.context에서 지정한 문서들의 링크도 표시 문제로 절대 경로로 변경해서 저장해야 한다.
+    const result: string[] = []
+
+    // 필요없다고 생각하지만 note.context에 이미 변환된 내용이 있는지 확인하고 있으면 제거한다.
+    result.push(this.extractLinkFromNoteContext(note))
+
+    // comment controller의 입력창에서 설정하는 링크는 이것이 비록 마크다운 형태로 처리되어도 `file:///절대경로` 만 인식한다.
+    if (note.link) {
+      let root = PrismFileManager.getWorkspacePath() ?? ''
+      let link = note.link.replace('file:///', '')
+      if (link.startsWith('./')) {
+        // prism folder에서의 상대 경로인 경우에는...
+        // 이 링크가 prism file에 저장되어져 있기 때문에 여기서 현재 폴더는 prism folder이다.
+        root = PrismFileManager.getPrismFolderPath()
+      }
+
+      // string으로 저장할시에는 \를 /로 변경해야 한다. 그렇지 않으면 . 으로 시작하는 폴더가 상위 폴더와 분리가 되지 않는다.
+      link = path.join(root, link).replaceAll('\\', '/')
+
+      result.push('\n\n\n---')
+      result.push('_Modifing this section is useless!_')
+      result.push(`- [linked document - ${note.link}](file:///${link})`)
+    }
+
+    return result.join('\n')
+  }
+
+  /**
+   * Extracts the original content from a note's context by removing any appended
+   * link information. If the context contains a specific marker indicating the
+   * start of the appended link information, the method will return the content
+   * before this marker.
+   *
+   * @param note - The note object containing the context to be processed.
+   * @returns The original content of the note's context without the appended link information.
+   */
+  private extractLinkFromNoteContext(note: Note) {
+    // note.context에 이미 변환된 내용이 있는지 확인하고 있으면 제거한다.
+    let original = note.context
+    const index = note.context.indexOf('\n---\n_Modifing this section is useless!_\n- [linked document -')
+    if (index > 0) {
+      original = note.context.slice(0, index)
+    }
+    return original
   }
 }
