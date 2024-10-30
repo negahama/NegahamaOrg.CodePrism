@@ -133,7 +133,7 @@ export function prism_activate(context: vscode.ExtensionContext) {
   // )
 
   docdetector_activate(context)
-  output.log('activated docdetector')
+  output.log('activated doc-detector')
 
   prismCommands.loadPrismFiles()
 

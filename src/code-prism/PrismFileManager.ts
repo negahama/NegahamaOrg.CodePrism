@@ -250,9 +250,9 @@ export class PrismFileManager {
 
     const content =
       `# ${title}\n` +
-      `This is the markdown file for '${prism.name}'.\n\n` +
-      `[code](${source}): ${PrismFileManager.getWorkspacePath()}${source}\n` +
-      `You can edit this file to add more information about ${title}.\n\n`
+      `> This markdown file is for '${prism.name}'.\n>\n` +
+      `> [code](${source}): ${PrismFileManager.getWorkspacePath()}${source}\n>\n` +
+      `> You can edit this file to add more information about '${title}'.\n---\n`
 
     fs.writeFileSync(markdownFilePath, content)
     return true

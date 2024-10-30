@@ -21,7 +21,7 @@ export function uuid(): string {
  * Issue는 파일 내의 특정 위치와 연결되어지며 해당 위치에 대한 다수의 정보(Note)를 담고 있다.
  * Note은 단일 정보를 의미하며 텍스트와 Link등으로 하나의 정보를 표현한다.
  *
- * Prism 개체는 new Prism()으로 생성하면 안된다. PrismManager.createPrism()을 사용해야 한다.
+ * Prism 개체는 `new Prism()`으로 생성하면 안된다. `PrismManager.createPrism()`을 사용해야 한다.
  *
  * @class
  * @property {string} ver - The version of the Prism.
