@@ -2,9 +2,9 @@ import * as vscode from 'vscode'
 
 import { IssueItem, PrismItem } from './PrismTreeProvider'
 import { PrismCommands } from './PrismCommands'
-import { PrismLinkHoverProvider, PrismLinkProvider } from './PrismLinkProvider'
 import { NoteDescription } from './PrismCommentController'
-import { docdetector_activate } from './PrismDocDetector.js'
+import { linkdetector_activate } from './PrismLinkDetector'
+import { docdetector_activate } from './PrismDocDetector'
 import { output } from './PrismOutputChannel.js'
 
 /**
@@ -115,12 +115,6 @@ export function prism_activate(context: vscode.ExtensionContext) {
     })
   )
 
-  // Register the DocumentLinkProvider for all file types
-  context.subscriptions.push(vscode.languages.registerDocumentLinkProvider({ language: '*' }, new PrismLinkProvider()))
-
-  // Register the HoverProvider for all file types
-  context.subscriptions.push(vscode.languages.registerHoverProvider('*', new PrismLinkHoverProvider()))
-
   // for test
   // context.subscriptions.push(
   //   vscode.commands.registerCommand('CodePrism.command.showMarkdownPreviewToSide', (uri: string, option?: string) => {
@@ -131,6 +125,9 @@ export function prism_activate(context: vscode.ExtensionContext) {
   //     // })
   //   })
   // )
+
+  linkdetector_activate(context)
+  output.log('activated link-detector')
 
   docdetector_activate(context)
   output.log('activated doc-detector')

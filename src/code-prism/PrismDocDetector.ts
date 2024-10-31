@@ -33,28 +33,6 @@ type LinkedDoc = {
  */
 export async function docdetector_activate(context: vscode.ExtensionContext) {
   /**
-   * Retrieves the content of a linked document from the given URI.
-   *
-   * @param uri - The URI of the document to retrieve content from.
-   * @returns The content of the document as a string. If an error occurs, returns a default message indicating no content.
-   */
-  const getLinkedDocContent = (uri: vscode.Uri): string => {
-    let content: string = '# No content'
-    try {
-      const data = PrismFileManager.readFile(uri.fsPath)
-      let lines = data.split('\n')
-      if (lines.length > 10) {
-        lines = lines.slice(0, 10)
-        lines.push('`... <more>`')
-      }
-      content = lines.join('\n')
-    } catch (error) {
-      console.error(error)
-    }
-    return content
-  }
-
-  /**
    * Retrieves information about documents linked to a given source file.
    *
    * @param uri - The URI of the source file for which to find linked documents.
@@ -92,7 +70,7 @@ export async function docdetector_activate(context: vscode.ExtensionContext) {
         uri = vscode.Uri.file(prismFolder + linked.replace('file:///./', '/'))
       }
 
-      return { uri, content: getLinkedDocContent(uri) }
+      return { uri, content: PrismFileManager.getDocContent(uri.fsPath) }
     })
   }
 
@@ -106,7 +84,9 @@ export async function docdetector_activate(context: vscode.ExtensionContext) {
           const commandId = 'markdown.showPreviewToSide'
           const encodedArgs = encodeURIComponent(JSON.stringify(args))
           const openCommandUri = vscode.Uri.parse(`command:${commandId}?${encodedArgs}`)
-          const mds = new vscode.MarkdownString(`[🔗 relative document](${openCommandUri}) <div>\n${doc.content}</div>`)
+          const mds = new vscode.MarkdownString(
+            `[🔗 Open relative document (by Code Prism)](${openCommandUri}) <div>\n${doc.content}</div>`
+          )
           mds.supportHtml = true
           mds.isTrusted = true
           mdsArray.push(mds)

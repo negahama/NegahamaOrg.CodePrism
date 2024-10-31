@@ -239,8 +239,8 @@ export class PrismFileManager {
     // 이 markdown 자체가 note와 관련이 있기 때문에 markdown title을 note의 context로 한다.
     let title = 'untitled'
     issue.notes.forEach(note => {
-      if (note.context) {
-        title = note.context
+      if (note.content) {
+        title = note.content
       }
     })
     let source = ''
@@ -274,5 +274,48 @@ export class PrismFileManager {
       return fs.readFileSync(fileName, 'utf8')
     }
     return ''
+  }
+
+  /**
+   * Retrieves the content of a specified file and formats it for display.
+   * 링크된 uri에 fragment가 포함되어 있으면 오픈할 파일명으로 적절하지 않기 때문에 이를 제거하는데 이미 그렇게 오고 있다.
+   * markdown 문서가 아니면 코드로 표시한다.
+   *
+   * @param fileName - The name of the file to read content from.
+   * @returns A string containing the formatted content of the file. If the file has more than 10 lines,
+   *          only the first 10 lines are included followed by a '`... <more>`' indicator. If the file
+   *          extension is not 'md', the content is wrapped in code block markers.
+   * @throws Will log an error to the console if there is an issue reading the file.
+   */
+  static getDocContent(fileName: string): string {
+    let content: string = '# No content'
+    try {
+      const data = PrismFileManager.readFile(fileName)
+      const ext = fileName.split('.').pop()
+      if (ext !== 'md') {
+        let lines = data.split('\n')
+        if (lines.length > 10) {
+          lines = lines.slice(0, 10)
+        }
+        content = lines.join('\n')
+        content = '\n```\n' + content + '\n```\n'
+        content += '\n`... <more>`'
+      } else {
+        // markdown의 경우에는 문서 일부만 표시할 경우 ``` 이 닫혔는지 여부를 확인해야 한다.
+        let lines = data.split('\n')
+        if (lines.length > 10) {
+          lines = lines.slice(0, 10)
+          const backtickCount = lines.filter(line => line.includes('```')).length
+          if (backtickCount % 2 === 1) {
+            lines.push('```')
+          }
+          lines.push('\n`... <more>`')
+        }
+        content = lines.join('\n')
+      }
+    } catch (error) {
+      console.error(error)
+    }
+    return content
   }
 }

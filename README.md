@@ -33,23 +33,20 @@ The prism file and the document correspond one-to-one, and one prism file may co
 
 ## 🔗 Release Notes
 
+### 1.1.0
+
+> 🚨 This version is not compatible with the previous versions  
+>  (if you need your data, please rename the `context` to `content` in all prism files in your prism folder(it is normally `<your project>.prism`) T.T)
+
+- improve function about link in comment controller's comment
+
 ### 1.0.8
 
 improve the link function
 
 ### 1.0.7
 
-fix the bug that don't show the linked file's context in hover tooltip
-
-### 1.0.6
-
-changed the extension's icon
-
-### 1.0.5
-
-1. fix the bug that is malfunction of cancel button when input issue in comment controller.
-2. implement to show the link information when comment is shown in comment controller.
-3. and so on
+fix the bug that don't show the linked file's contents in hover tooltip
 
 ---
 

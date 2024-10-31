@@ -273,7 +273,7 @@ export class PrismViewer {
                   ${note.link ? 'Open Markdown' : 'Create Markdown'}</a>
                 </li>
               </ul></div>
-              context: ${getDesc(note.context)}
+              contents: ${getDesc(note.content)}
             </div>
           `}).join('')}
         <button class="common-button append-button" onclick="appendNote(${issue.id})">New note</button>
@@ -290,7 +290,7 @@ export class PrismViewer {
       //   markdown.appendMarkdown(`- createdAt: ${note.createdAt}\n`)
 
       //   markdown.appendText('\n\n')
-      //   const lines = note.context.split('\n')
+      //   const lines = note.content.split('\n')
       //   lines.forEach(line => {
       //     markdown.appendMarkdown(`> ${line}\n`)
       //   })
@@ -298,10 +298,10 @@ export class PrismViewer {
       // return marked(markdown.value, { async: false })
     }
 
-    const getDesc = (context: string) => {
+    const getDesc = (contents: string) => {
       const markdown = new vscode.MarkdownString()
       markdown.appendText('\n\n')
-      const lines = context.split('\n')
+      const lines = contents.split('\n')
       lines.forEach(line => {
         markdown.appendMarkdown(`> ${line}\n`)
       })

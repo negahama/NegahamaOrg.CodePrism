@@ -280,16 +280,16 @@ export class Prism {
   /**
    * Generates a default note object.
    *
-   * @param context - An optional context string to include in the note.
+   * @param content - An optional string to include in the note.
    * @returns A `Note` object with default values.
    */
-  static getDefaultNote(context?: string): Note {
+  static getDefaultNote(content?: string): Note {
     return {
       id: uuid(),
       category: 'General',
       importance: 'Medium',
       createdAt: new Date().toISOString(),
-      context: context ?? 'I have something to do',
+      content: content ?? 'I have something to do',
     }
   }
 }
@@ -342,7 +342,7 @@ export interface Source {
  * @property {string} category - The category to which the note belongs.
  * @property {string} importance - The importance level of the note.
  * @property {string} createdAt - The date and time when the note was created.
- * @property {string} context - The context or content of the note.
+ * @property {string} content - The content of the note.
  * @property {string} [link] - An optional link related to the note.
  * @property {string} [link2] - An optional second link related to the note.
  */
@@ -351,7 +351,7 @@ export interface Note {
   category: string
   importance: string
   createdAt: string
-  context: string
+  content: string
   link?: string
   link2?: string
 }

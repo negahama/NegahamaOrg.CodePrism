@@ -4,6 +4,7 @@ import * as path from 'path'
 import { Note, Prism, uuid } from './Prism'
 import { PrismManager, SubscribeType } from './PrismManager'
 import { PrismFileManager } from './PrismFileManager'
+import { convertLink } from './PrismLinkDetector'
 import { IssueItem } from './PrismTreeProvider'
 import { output } from './PrismOutputChannel'
 
@@ -216,13 +217,11 @@ export class PrismCommentController {
   }
 
   /**
-   * Adds a issue to the active text editor at the specified line and column.
-   * If no text is selected, the issue is added at the current cursor position.
-   * If text is selected, the issue is added at the start of the selection.
-   * The issue is associated with a prism, which is created if it does not already exist.
+   * Adds an issue to the Prism context based on the current selection in the active text editor.
+   * If no text is selected, it uses the word under the cursor or the entire line if no word is found.
+   * The issue is then appended to the corresponding Prism file, and a comment thread is created.
    *
-   * @param arg - The context parameters for the editor line number.
-   *
+   * @param uri - The URI of the file where the issue is being added.
    * The function performs the following steps:
    * 1. Checks if there is an active text editor.
    * 2. Determines the line, column, and title of the issue based on the current selection.
@@ -375,10 +374,11 @@ export class PrismCommentController {
     vscode.window.showInformationMessage(`add note: ${reply.text}`)
 
     const note = Prism.getDefaultNote(reply.text)
+    const body = new vscode.MarkdownString(convertLink(reply.text))
 
     const newComment = new NoteDescription(
       note.category,
-      reply.text,
+      body,
       vscode.CommentMode.Preview,
       note.createdAt,
       reply.thread
@@ -421,9 +421,9 @@ export class PrismCommentController {
       return
     }
 
-    const context = this.extractLinkFromNoteContext(note)
+    const newContent = this.extractLinkFromNoteContent(note)
 
-    prism.appendNote(issue.id, { ...note, context })
+    prism.appendNote(issue.id, { ...note, content: newContent })
     PrismManager.updatePrism(prism)
   }
 
@@ -580,12 +580,12 @@ export class PrismCommentController {
     }
 
     if (found) {
-      note.context = typeof found.body === 'string' ? found.body : found.body.value
+      note.content = typeof found.body === 'string' ? found.body : found.body.value
     }
 
-    const context = this.extractLinkFromNoteContext(note)
+    const newContent = this.extractLinkFromNoteContent(note)
 
-    prism.updateNote(issue.id, { ...note, context })
+    prism.updateNote(issue.id, { ...note, content: newContent })
     PrismManager.updatePrism(prism)
   }
 
@@ -645,10 +645,12 @@ export class PrismCommentController {
   private convertNoteToComment(note: Note): NoteDescription {
     // note를 comment로 변환한다.
     // 이때 comment에는 표시되지 않는 issue의 정보(예를들면 link)를 comment.body에 추가한다.
-    const body = this.appendLinkToNoteContext(note)
+    // 또 note의 body에 있는 링크 정보를 절대 경로로 변환해 준다.(comment에서는 상대 경로를 지원하지 않음)
+    const contents = this.appendLinkToNoteContent(note)
+    const body = new vscode.MarkdownString(convertLink(contents))
     return {
       kind: note.category,
-      body: new vscode.MarkdownString(body),
+      body,
       mode: vscode.CommentMode.Preview,
       // thread는 나중에 설정한다.
       id: note.id,
@@ -659,23 +661,23 @@ export class PrismCommentController {
   }
 
   /**
-   * Appends a link to the note's context if it exists and ensures that the link is in an absolute path format.
+   * Appends a link to the note's body if it exists and ensures that the link is in an absolute path format.
    *
    * This method performs the following steps:
-   * 1. Extracts any existing links from the note's context and removes them.
+   * 1. Extracts any existing links from the note's body and removes them.
    * 2. If the note has a link, it processes the link to ensure it is in an absolute path format.
    * 3. Adds the processed link to the result array in a markdown format.
    *
-   * @param note - The note object which may contain a link and context information.
-   * @returns A string representing the modified note context with the appended link.
+   * @param note - The note object which may contain a link and body information.
+   * @returns A string representing the modified note body with the appended link.
    */
-  private appendLinkToNoteContext(note: Note) {
-    // comment controlller에서는 note의 링크가 표시되어지지 않기 때문에 이를 context에 추가해서 표시한다.
-    // 또한 note.context에서 지정한 문서들의 링크도 표시 문제로 절대 경로로 변경해서 저장해야 한다.
+  private appendLinkToNoteContent(note: Note) {
+    // comment controlller에서는 note의 링크가 표시되어지지 않기 때문에 이를 body에 추가해서 표시한다.
+    // 또한 note.content에서 지정한 문서들의 링크도 표시 문제로 절대 경로로 변경해서 저장해야 한다.
     const result: string[] = []
 
-    // 필요없다고 생각하지만 note.context에 이미 변환된 내용이 있는지 확인하고 있으면 제거한다.
-    result.push(this.extractLinkFromNoteContext(note))
+    // 필요없다고 생각하지만 note.content에 이미 변환된 내용이 있는지 확인하고 있으면 제거한다.
+    result.push(this.extractLinkFromNoteContent(note))
 
     // comment controller의 입력창에서 설정하는 링크는 이것이 비록 마크다운 형태로 처리되어도 `file:///절대경로` 만 인식한다.
     if (note.link) {
@@ -699,20 +701,20 @@ export class PrismCommentController {
   }
 
   /**
-   * Extracts the original content from a note's context by removing any appended
-   * link information. If the context contains a specific marker indicating the
+   * Extracts the original content from a note's body by removing any appended
+   * link information. If the body contains a specific marker indicating the
    * start of the appended link information, the method will return the content
    * before this marker.
    *
-   * @param note - The note object containing the context to be processed.
-   * @returns The original content of the note's context without the appended link information.
+   * @param note - The note object containing the body to be processed.
+   * @returns The original content of the note's body without the appended link information.
    */
-  private extractLinkFromNoteContext(note: Note) {
-    // note.context에 이미 변환된 내용이 있는지 확인하고 있으면 제거한다.
-    let original = note.context
-    const index = note.context.indexOf('\n---\n_Modifing this section is useless!_\n- [linked document -')
+  private extractLinkFromNoteContent(note: Note) {
+    // note.content에 이미 변환된 내용이 있는지 확인하고 있으면 제거한다.
+    let original = note.content
+    const index = note.content.indexOf('\n---\n_Modifing this section is useless!_\n- [linked document -')
     if (index > 0) {
-      original = note.context.slice(0, index)
+      original = note.content.slice(0, index)
     }
     return original
   }

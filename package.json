@@ -2,7 +2,7 @@
   "name": "codeprism",
   "displayName": "CodePrism",
   "description": "Source code analysis tool",
-  "version": "1.0.8",
+  "version": "1.1.0",
   "publisher": "NegahamaOrg",
   "author": "Samuel Kang",
   "homepage": "https://github.com/negahama/NegahamaOrg.CodePrism",
@@ -326,12 +326,12 @@
       "comments/comment/title": [
         {
           "command": "CodePrism.command.editNote",
-          "group": "group@1",
+          "group": "inline",
           "when": "commentController == code-prism-issue-tracker"
         },
         {
           "command": "CodePrism.command.deleteNote",
-          "group": "group@2",
+          "group": "inline",
           "when": "commentController == code-prism-issue-tracker"
         }
       ],
