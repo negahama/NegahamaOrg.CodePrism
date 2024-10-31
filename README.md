@@ -33,9 +33,13 @@ The prism file and the document correspond one-to-one, and one prism file may co
 
 ## 🔗 Release Notes
 
+### 1.0.8
+
+improve the link function
+
 ### 1.0.7
 
-changed the extension's icon
+fix the bug that don't show the linked file's context in hover tooltip
 
 ### 1.0.6
 

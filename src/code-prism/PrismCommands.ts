@@ -46,7 +46,7 @@ export class PrismCommands {
    * Initializes the PrismFileProvider and registers it.
    * Initializes the PrismCommentController with the provided context.
    *
-   * Note: Refer to [concept](doc/concept.md) for more details.
+   * Note: Refer to [concept](/doc/concept.md) for more details.
    * The PrismFileProvider subscribes only to prism and issue events, not description events.
    *
    * Listens for text document changes in the workspace and handles them via the onChangeTextDocument method.

@@ -2,7 +2,7 @@
   "name": "codeprism",
   "displayName": "CodePrism",
   "description": "Source code analysis tool",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "publisher": "NegahamaOrg",
   "author": "Samuel Kang",
   "homepage": "https://github.com/negahama/NegahamaOrg.CodePrism",
@@ -167,7 +167,7 @@
     "viewsWelcome": [
       {
         "view": "CodePrism.view.prismView",
-        "contents": "No Prism File yet.\nThe prism file will be automatically made by...\n1. clicking the [+] button in editor view's left area\n2. selecting 'Add new issue' in editor view's context menu.\nTo learn more about how to use Code Prism in VS Code, please visit [here](https://github.com/negahama/NegahamaOrg.CodeDoc/issues)"
+        "contents": "No Prism File yet.\nThe prism file will be automatically made by...\n1. clicking the [+] button in editor view's left area\n2. selecting 'Add new issue' in editor view's context menu.\nTo learn more about how to use Code Prism in VS Code, please visit [here](https://github.com/negahama/NegahamaOrg.CodePrism/issues)"
       },
       {
         "view": "CodePrism.view.astView",

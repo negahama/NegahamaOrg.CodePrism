@@ -2,8 +2,8 @@ import * as vscode from 'vscode'
 import { parse } from 'path'
 import { PrismFileManager } from './PrismFileManager'
 
-// [concept](doc/concept.md) 참고
-// [linker](doc/linker.md) 참고
+// [concept](/doc/concept.md) 참고
+// [linker](/doc/linker.md) 참고
 
 /**
  * Represents information about a link within the code.
@@ -50,28 +50,32 @@ function parseLink(text: string, documentPath: string): LinkInfo | null {
     let desc = descMatch[0]
     let path = pathMatch[1]
 
-    // uri를 파싱할때 아래와 같이 uri.toString()을 사용하면 query와 fragment를 추출할 수 없다.
-    // uri.toString()을 사용하면 file:///d%3A/Users/.../filename.md%23L52-L54 이런식으로 반환되기 때문에 문제가 되는 것 같다.
-    // 이 패스에서 ?query 와 #fragment를 추출한다.
-    const { fragment } = vscode.Uri.parse(path)
-
-    // 추출한 후 패스에서 query와 fragment를 제거한다.
-    path = path.replace(/\?.*$/, '').replace(/#.*/, '')
-
-    // path는 절대경로, 상대경로, 워크스페이스 경로가 될 수 있다.
-    // 절대경로는 file:///로 시작하고 상대경로는 ./로 시작한다. 그외는 워크스페이스 경로로 간주한다.
-    // If the path is not absolute, make it relative to the workspace folder
+    // path는 절대 경로, 상대 경로, 워크스페이스 경로가 될 수 있다.
+    // 절대 경로는 file:///로 시작하고 상대 경로는 ./로 시작하고 워크스페이스 경로는 / 으로 시작한다.
+    // 모든 경로는 절대 경로로 변환되는데 file:///로 시작하는 경우는 이를 제거하고(나중에 다시 포함되어짐)
+    // 상대 경로는 같이 전달된 documentPath를 기준으로 절대 경로로 변환한다.
     if (path.startsWith('file:///')) {
-      // do nothing
+      path = path.replace('file:///', '')
     } else if (path.startsWith('./')) {
       const dir = parse(documentPath).dir
       path = vscode.Uri.joinPath(vscode.Uri.file(dir), path).fsPath
-    } else {
+    } else if (path.startsWith('/')) {
       const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
       if (workspaceFolder) {
         path = vscode.Uri.joinPath(workspaceFolder.uri, path).fsPath
       }
+    } else {
+      return null
     }
+
+    // 이 패스에서 ?query 와 #fragment를 추출한다.
+    // uri를 파싱할때 uri.toString()을 사용하면 query와 fragment를 추출할 수 없다.
+    // uri.toString()이 file:///d%3A/Users/.../filename.md%23L52-L54 이런식으로 반환되기 때문에 문제가 되는 것 같다.
+    // 이 함수의 argument인 text는 uri.fsPath로 전달된다.
+    const { fragment } = vscode.Uri.parse(path)
+
+    // 추출한 후 패스에서 query와 fragment를 제거한다.
+    path = path.replace(/\?.*$/, '').replace(/#.*/, '')
 
     // 이 과정이 꼭 필요하다.
     path = path.replace(/\\/g, '/')
@@ -219,8 +223,8 @@ export class PrismLinkHoverProvider implements vscode.HoverProvider {
       // 이 코드가 정상적으로 동작하기 위해서는 명령의 쿼리로 인코딩된 인수를 전달해야 하는데
       // 인코딩 전에 JSON.stringify()를 사용하여 인코딩해야 하며 이때 args로 Uri 개체 자체가
       // 배열로 전달되어야 한다.
-      // [concept](doc/concept.md) 참고
-      // [linker](doc/linker.md) 참고
+      // [concept](/doc/concept.md) 참고
+      // [linker](/doc/linker.md) 참고
 
       // 프리뷰의 인수로 전달되는 uri는 fragment를 포함할 수 없다.
       // markdown 문서인 경우에는 markdown 프리뷰를 오픈하고 그렇지 않은 경우에는 문서를 바로 표시한다.
@@ -245,7 +249,7 @@ export class PrismLinkHoverProvider implements vscode.HoverProvider {
         // 링크를 클릭해서 정상적으로 파일이 오픈되게 하려면 링크에 file scheme이 필요하다.
         // Create a MarkdownString for the hover
         const markdownString = new vscode.MarkdownString(
-          `[${result.description}](file:///${result.fileName}) <div>\n${this.getDocContent(result.fileName)}</div>`
+          `[🔗 Open document](file:///${result.fileName}) <div>\n${this.getDocContent(result.fileName)}</div>`
         )
         markdownString.supportHtml = true
         markdownString.isTrusted = true

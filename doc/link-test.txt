@@ -1,0 +1,18 @@
+
+file:///../doc/sample.md               현재 경로인 ./ 필요함
+file:///sample.md                      현재 경로인 ./ 필요함
+
+file:///./../doc/sample.md             가능(ctrl+click), follow link(X)
+file:///./codeFlows.sarif?#L100-L120    가능(ctrl+click), follow link(X) 해당 범위로 이동하진 않는다.
+
+file:///d:/Samuel/NegahamaOrg.CodePrism/doc/sample.md        둘다 가능
+
+
+[code](src/code-prism/Prism.ts)                 root 경로
+[code](/src/code-prism/Prism.ts)                root 경로
+[code](./../src/code-prism/Prism.ts)            상대 경로
+[code](/src/code-prism/Prism.ts?#L50-L60)       범위 지정
+[code](/src/code-prism/Prism.ts#L50-L60)
+[code](/src/code-prism/Prism.ts#50-60)
+
+[docu](./sample.md)                            상대 경로
