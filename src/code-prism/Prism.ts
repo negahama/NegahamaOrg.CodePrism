@@ -12,7 +12,7 @@ import { PrismFileManager } from './PrismFileManager'
  *
  * @returns {string} A randomly generated UUID in hexadecimal format.
  */
-export function uuid(): string {
+function uuid(): string {
   return crypto.randomBytes(16).toString('hex')
 }
 
@@ -21,6 +21,7 @@ export function uuid(): string {
  * Issue는 파일 내의 특정 위치와 연결되어지며 해당 위치에 대한 다수의 정보(Note)를 담고 있다.
  * Note은 단일 정보를 의미하며 텍스트와 Link등으로 하나의 정보를 표현한다.
  *
+ * @remarks
  * Prism 개체는 `new Prism()`으로 생성하면 안된다. `PrismManager.createPrism()`을 사용해야 한다.
  *
  * @class
@@ -30,8 +31,8 @@ export function uuid(): string {
  */
 export class Prism {
   // Prism, Issue, Note에 변경 사항을 발생하면 PubSub을 이용하여 subscriber에게 변경 사항을 전달한다
-  // publish-subscribe의 설정은 PrismManager를 통해서 설정하며 Prism 개체는 단지 PrismManager의 설정값을
-  // 사용할 뿐이다. Prism의 pubSub 설정도 PrismManager가 Prism 생성 후 설정해 준다.
+  // publish-subscribe의 설정은 PrismManager를 통해서 설정하며 Prism 개체는 단지 PrismManager의
+  // 설정값을 사용할 뿐이다. Prism의 pubSub 설정도 PrismManager가 Prism 생성 후 설정해 준다.
   private pubSub?: PubSub<SubscribeType>
   setPubSub(pubSub: PubSub<SubscribeType>): void {
     this.pubSub = pubSub
@@ -147,14 +148,15 @@ export class Prism {
    *
    * @param issue - The issue to be added.
    */
-  appendIssue(issue: Issue): void {
+  appendIssue(issue: Issue): Issue {
     const exist = this.getIssue(issue.id)
     if (exist) {
-      return
+      return exist
     }
 
     this.issues.push(issue)
     this.pubSub?.publish('append-issue', { prism: this, issue })
+    return issue
   }
 
   /**
@@ -167,7 +169,7 @@ export class Prism {
    * The source file path is stored relative to the workspace root, which must start with a '/'.
    * The line and column numbers in the range are adjusted to be 1-based.
    */
-  appendIssueDetails(title: string, source: string, range: vscode.Range): void {
+  appendIssueDetails(title: string, source: string, range: vscode.Range): Issue {
     const issue: Issue = {
       id: uuid(),
       title,
@@ -185,6 +187,7 @@ export class Prism {
     }
 
     this.appendIssue(issue)
+    return issue
   }
 
   /**
@@ -216,18 +219,20 @@ export class Prism {
   /**
    * Appends a note to the specified issue.
    *
-   * @param issueId - The unique identifier of the issue to which the note will be appended.
+   * @param issueId - The ID of the issue to which the note will be appended.
    * @param note - The note to append to the issue.
-   * @returns void
+   * @returns The appended note if the issue exists, otherwise `undefined`.
    */
-  appendNote(issueId: string, note: Note): void {
+  appendNote(issueId: string, note: Note): Note | undefined {
     const issue = this.getIssue(issueId)
     if (!issue) {
-      return
+      return undefined
     }
 
     issue.notes.push(note)
-    this.pubSub?.publish('append-note', { issue, note: note })
+    this.pubSub?.publish('append-note', { issue, note })
+    // console.log(`🚀 ~ appendNote: ${issueId}, ${note.id}`)
+    return note
   }
 
   /**
@@ -253,6 +258,7 @@ export class Prism {
 
     Object.assign(exist, note)
     this.pubSub?.publish('update-note', { note: note })
+    // console.log(`🚀 ~ updateNote: ${issueId}, ${note.id}`)
   }
 
   /**
@@ -275,6 +281,7 @@ export class Prism {
 
     issue.notes = issue?.notes.filter(n => n.id !== noteId)
     this.pubSub?.publish('remove-note', { issue, note })
+    // console.log(`🚀 ~ removeNote: ${issueId}, ${note.id}`)
   }
 
   /**

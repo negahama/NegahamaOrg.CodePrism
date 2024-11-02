@@ -309,4 +309,23 @@ export class PrismManager {
     }
     return issues
   }
+
+  /**
+   * Retrieves a issue and its corresponding note by the note ID.
+   *
+   * @param noteId - The ID of the note to find.
+   * @returns An object containing the issue and note if found, otherwise `undefined`.
+   */
+  static findPrismIssueNoteByNoteId(noteId: string): { prism: Prism; issue: Issue; note: Note } | undefined {
+    for (const prism of this.prisms) {
+      for (const issue of prism.issues) {
+        const note = issue.notes.find(n => n.id === noteId)
+        if (note) {
+          return { prism, issue, note }
+        }
+      }
+    }
+    console.error('error in findPrismIssueNoteByNoteId: noteId is', noteId)
+    return undefined
+  }
 }

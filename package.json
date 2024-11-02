@@ -32,85 +32,91 @@
     "commands": [
       {
         "category": "Code Prism",
-        "command": "CodePrism.command.showPrismFile",
+        "command": "CodePrism.command.prismFile.show",
         "title": "Show prism file",
         "icon": "$(open-preview)"
       },
       {
         "category": "Code Prism",
-        "command": "CodePrism.command.deletePrismFile",
+        "command": "CodePrism.command.prismFile.delete",
         "title": "Delete prism file",
         "icon": "$(trash)"
       },
       {
         "category": "Code Prism",
-        "command": "CodePrism.command.addIssue.context",
+        "command": "CodePrism.command.issue.addByContext",
         "title": "Add new issue",
         "icon": "$(add)"
       },
       {
         "category": "Code Prism",
-        "command": "CodePrism.command.gotoIssue",
+        "command": "CodePrism.command.issue.goto",
         "title": "Goto this issue",
         "icon": "$(go-to-file)"
       },
       {
         "category": "Code Prism",
-        "command": "CodePrism.command.deleteIssue",
+        "command": "CodePrism.command.issue.delete",
         "title": "Delete this issue",
         "icon": "$(trash)"
       },
       {
         "category": "Code Prism",
-        "command": "CodePrism.command.addNote",
+        "command": "CodePrism.command.note.add",
         "title": "Add new note to issue",
         "enablement": "!commentIsEmpty"
       },
       {
         "category": "Code Prism",
-        "command": "CodePrism.command.addNote.cancel",
+        "command": "CodePrism.command.note.addCancel",
         "title": "Cancel"
       },
       {
         "category": "Code Prism",
-        "command": "CodePrism.command.editNote",
-        "title": "Edit this note",
-        "icon": "$(edit)"
-      },
-      {
-        "category": "Code Prism",
-        "command": "CodePrism.command.deleteNote",
+        "command": "CodePrism.command.note.delete",
         "title": "Delete this note",
         "icon": "$(trash)"
       },
       {
         "category": "Code Prism",
-        "command": "CodePrism.command.saveNote",
+        "command": "CodePrism.command.note.changeCategory",
+        "title": "Change category of this note",
+        "icon": "$(tag)"
+      },
+      {
+        "category": "Code Prism",
+        "command": "CodePrism.command.note.makeMarkdown",
+        "title": "Create markdown file for this note and link to note",
+        "icon": "$(markdown)"
+      },
+      {
+        "category": "Code Prism",
+        "command": "CodePrism.command.note.edit",
+        "title": "Edit this note",
+        "icon": "$(edit)"
+      },
+      {
+        "category": "Code Prism",
+        "command": "CodePrism.command.note.save",
         "title": "Save this note",
         "icon": "$(save)"
       },
       {
         "category": "Code Prism",
-        "command": "CodePrism.command.saveNote.cancel",
+        "command": "CodePrism.command.note.saveCancel",
         "title": "Cancel"
-      },
-      {
-        "category": "Code Prism",
-        "command": "CodePrism.command.prismView.collapseAll",
-        "title": "Collapse All",
-        "icon": "$(collapse-all)"
-      },
-      {
-        "category": "Code Prism",
-        "command": "CodePrism.command.prismView.expandAll",
-        "title": "Expand All",
-        "icon": "$(expand-all)"
       },
       {
         "category": "Code Prism",
         "command": "CodePrism.command.prismView.reload",
         "title": "Reload",
         "icon": "$(refresh)"
+      },
+      {
+        "category": "Code Prism",
+        "command": "CodePrism.command.prismView.expandAll",
+        "title": "Expand All",
+        "icon": "$(expand-all)"
       },
       {
         "category": "Code Prism",
@@ -181,59 +187,63 @@
     "menus": {
       "commandPalette": [
         {
-          "command": "CodePrism.command.showPrismFile",
+          "command": "CodePrism.command.prismFile.show",
           "when": "false"
         },
         {
-          "command": "CodePrism.command.deletePrismFile",
+          "command": "CodePrism.command.prismFile.delete",
           "when": "false"
         },
         {
-          "command": "CodePrism.command.addIssue.context",
+          "command": "CodePrism.command.issue.addByContext",
           "when": "false"
         },
         {
-          "command": "CodePrism.command.gotoIssue",
+          "command": "CodePrism.command.issue.goto",
           "when": "false"
         },
         {
-          "command": "CodePrism.command.deleteIssue",
+          "command": "CodePrism.command.issue.delete",
           "when": "false"
         },
         {
-          "command": "CodePrism.command.addNote",
+          "command": "CodePrism.command.note.add",
           "when": "false"
         },
         {
-          "command": "CodePrism.command.addNote.cancel",
+          "command": "CodePrism.command.note.addCancel",
           "when": "false"
         },
         {
-          "command": "CodePrism.command.editNote",
+          "command": "CodePrism.command.note.delete",
           "when": "false"
         },
         {
-          "command": "CodePrism.command.deleteNote",
+          "command": "CodePrism.command.note.changeCategory",
           "when": "false"
         },
         {
-          "command": "CodePrism.command.saveNote",
+          "command": "CodePrism.command.note.makeMarkdown",
           "when": "false"
         },
         {
-          "command": "CodePrism.command.saveNote.cancel",
+          "command": "CodePrism.command.note.edit",
           "when": "false"
         },
         {
-          "command": "CodePrism.command.prismView.collapseAll",
+          "command": "CodePrism.command.note.save",
           "when": "false"
         },
         {
-          "command": "CodePrism.command.prismView.expandAll",
+          "command": "CodePrism.command.note.saveCancel",
           "when": "false"
         },
         {
           "command": "CodePrism.command.prismView.reload",
+          "when": "false"
+        },
+        {
+          "command": "CodePrism.command.prismView.expandAll",
           "when": "false"
         },
         {
@@ -247,19 +257,14 @@
       ],
       "view/title": [
         {
-          "command": "CodePrism.command.prismView.collapseAll",
+          "command": "CodePrism.command.prismView.reload",
           "when": "view == CodePrism.view.prismView",
-          "group": "navigation"
+          "group": "navigation@1"
         },
         {
           "command": "CodePrism.command.prismView.expandAll",
           "when": "view == CodePrism.view.prismView",
-          "group": "navigation"
-        },
-        {
-          "command": "CodePrism.command.prismView.reload",
-          "when": "view == CodePrism.view.prismView",
-          "group": "navigation"
+          "group": "navigation@2"
         },
         {
           "command": "CodePrism.command.definitionView.pin",
@@ -274,29 +279,29 @@
       ],
       "view/item/context": [
         {
-          "command": "CodePrism.command.showPrismFile",
+          "command": "CodePrism.command.prismFile.show",
           "when": "view == CodePrism.view.prismView && viewItem == PrismItem",
           "group": "inline"
         },
         {
-          "command": "CodePrism.command.deletePrismFile",
+          "command": "CodePrism.command.prismFile.delete",
           "when": "view == CodePrism.view.prismView && viewItem == PrismItem",
           "group": "inline"
         },
         {
-          "command": "CodePrism.command.gotoIssue",
+          "command": "CodePrism.command.issue.goto",
           "when": "view == CodePrism.view.prismView && viewItem == IssueItem",
           "group": "inline"
         },
         {
-          "command": "CodePrism.command.deleteIssue",
+          "command": "CodePrism.command.issue.delete",
           "when": "view == CodePrism.view.prismView && viewItem == IssueItem",
           "group": "inline"
         }
       ],
       "editor/context": [
         {
-          "command": "CodePrism.command.addIssue.context",
+          "command": "CodePrism.command.issue.addByContext",
           "when": "editorTextFocus"
         },
         {
@@ -306,43 +311,53 @@
       ],
       "comments/commentThread/title": [
         {
-          "command": "CodePrism.command.deleteIssue",
+          "command": "CodePrism.command.issue.delete",
           "group": "navigation",
           "when": "commentController == code-prism-issue-tracker && !commentThreadIsEmpty"
         }
       ],
       "comments/commentThread/context": [
         {
-          "command": "CodePrism.command.addNote",
-          "group": "inline",
+          "command": "CodePrism.command.note.add",
+          "group": "inline@1",
           "when": "commentController == code-prism-issue-tracker"
         },
         {
-          "command": "CodePrism.command.addNote.cancel",
-          "group": "inline",
+          "command": "CodePrism.command.note.addCancel",
+          "group": "inline@2",
           "when": "commentController == code-prism-issue-tracker"
         }
       ],
       "comments/comment/title": [
         {
-          "command": "CodePrism.command.editNote",
-          "group": "inline",
+          "command": "CodePrism.command.note.changeCategory",
+          "group": "inline@1",
           "when": "commentController == code-prism-issue-tracker"
         },
         {
-          "command": "CodePrism.command.deleteNote",
-          "group": "inline",
+          "command": "CodePrism.command.note.makeMarkdown",
+          "group": "inline@2",
+          "when": "commentController == code-prism-issue-tracker && comment != have-link"
+        },
+        {
+          "command": "CodePrism.command.note.edit",
+          "group": "inline@3",
+          "when": "commentController == code-prism-issue-tracker"
+        },
+        {
+          "command": "CodePrism.command.note.delete",
+          "group": "inline@4",
           "when": "commentController == code-prism-issue-tracker"
         }
       ],
       "comments/comment/context": [
         {
-          "command": "CodePrism.command.saveNote",
+          "command": "CodePrism.command.note.save",
           "group": "inline@1",
           "when": "commentController == code-prism-issue-tracker"
         },
         {
-          "command": "CodePrism.command.saveNote.cancel",
+          "command": "CodePrism.command.note.saveCancel",
           "group": "inline@2",
           "when": "commentController == code-prism-issue-tracker"
         }

@@ -3,7 +3,7 @@
 import * as vscode from 'vscode'
 
 // import { language_model_test } from './language-model-test.js'
-import { prism_activate } from './code-prism/PrismActivator.js'
+import { prism_activate } from './code-prism/PrismCommands.js'
 import { definition_activate } from './def-viewer/DefinitionViewProvider.js'
 import { mermaid_activate } from './mermaid-viewer/mermaid-viewer.js'
 // import { createTsAstViewer } from './ast-viewer/TsAstViewerMain.js'

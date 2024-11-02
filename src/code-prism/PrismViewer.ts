@@ -20,14 +20,8 @@ import { marked } from 'marked'
  *
  * @example
  * ```typescript
- * // Display a Prism file
- * PrismViewer.showPrismFile(prism);
- *
- * // Open a specific issue within a Prism file
- * PrismViewer.showPrismFile(prism, issue);
- *
- * // Open a Prism JSON file
- * PrismViewer.openPrismJsonFile(prism);
+ * // Open a Prism file
+ * PrismViewer.openPrismFile(prism);
  *
  * // Open a source file and highlight a specific selection
  * PrismViewer.openSourceFile(issue);
@@ -350,25 +344,9 @@ export class PrismViewer {
       </script>`
   }
 
-  /**
-   * Retrieves a issue and its corresponding note by the note ID.
-   *
-   * @param noteId - The ID of the note to find.
-   * @returns An object containing the issue and note if found, otherwise `undefined`.
-   */
-  static getIssueAndNoteByNoteId(noteId: string): { issue: Issue; note: Note } | undefined {
-    for (const issue of this.prism.issues) {
-      const note = issue.notes.find(n => n.id === noteId)
-      if (note) {
-        return { issue, note }
-      }
-    }
-    return undefined
-  }
-
   static onReceiveMessage(message: any) {
-    const result = this.getIssueAndNoteByNoteId(message.id)
-    if (!result) {
+    const result = PrismManager.findPrismIssueNoteByNoteId(message.id)
+    if (!result || result.prism !== this.prism) {
       return
     }
 
@@ -394,16 +372,13 @@ export class PrismViewer {
         const exist = !PrismFileManager.createMarkdownFile(message.id, this.prism, result.issue)
         if (!exist) {
           // 파일이 새로 생성되었을 경우에는 note의 link를 업데이트한다.
-          this.prism.issues.forEach(issue => {
-            const note = issue.notes.find(n => n.id === message.id)
-            if (note) {
-              const link = 'file:///./docs/' + message.id + '.md'
-              this.prism.updateNote(issue.id, { link, ...note })
-              PrismManager.updatePrism(this.prism)
+          if (result.note) {
+            const link = 'file:///./docs/' + message.id + '.md'
+            this.prism.updateNote(result.issue.id, { link, ...result.note })
+            PrismManager.updatePrism(this.prism)
 
-              this.panel.webview.html = this.getWebviewContent(this.prism)
-            }
-          })
+            this.panel.webview.html = this.getWebviewContent(this.prism)
+          }
         }
         this.openMarkdownFile(message.id)
         break

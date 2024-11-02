@@ -19,11 +19,11 @@ export class PrismItem extends vscode.TreeItem {
     super(prism.name, vscode.TreeItemCollapsibleState.Collapsed)
     this.tooltip = prism.name
     this.iconPath = new vscode.ThemeIcon('file-code')
-    // contextValue는 'contributes/menus/view/item/context'에서 deletePrismFile, deleteIssue 명령을 구분하기 위해서 사용한다.
+    // contextValue는 'contributes/menus/view/item/context'에서 prismFile.delete, issue.delete 명령을 구분하기 위해서 사용한다.
     this.contextValue = 'PrismItem'
-    // arguments로 [this]를 전달하는 것은 context menu로 'CodePrism.command.showPrismFile' 명령을 호출하는 경우와 같은 로직으로 처리하기 위해서이다.
+    // arguments로 [this]를 전달하는 것은 context menu로 'CodePrism.command.prismFile.show' 명령을 호출하는 경우와 같은 로직으로 처리하기 위해서이다.
     this.command = {
-      command: 'CodePrism.command.showPrismFile',
+      command: 'CodePrism.command.prismFile.show',
       title: 'Open',
       arguments: [this],
     }
@@ -47,7 +47,7 @@ export class IssueItem extends vscode.TreeItem {
    * The label displayed is the first description context of the issue, not the issue's title.
    * The tooltip is set to the issue's title.
    * The icon is set to a comment icon.
-   * The command executed is 'CodePrism.command.showPrismFile' with the current instance as an argument.
+   * The command executed is 'CodePrism.command.prismFile.show' with the current instance as an argument.
    */
   constructor(public readonly prism: Prism, public readonly issue: Issue, public readonly parent: PrismItem) {
     // 표시되어질 label은 issue의 title이 아니라 issue의 첫번째 description context이다.
@@ -63,11 +63,11 @@ export class IssueItem extends vscode.TreeItem {
     this.tooltip = tooltip
     // icon은 commentController와 동일하게 하기 위해 comment icon을 사용한다.
     this.iconPath = new vscode.ThemeIcon('comment')
-    // contextValue는 'contributes/menus/view/item/context'에서 deletePrismFile, deleteIssue 명령을 구분하기 위해서 사용한다.
+    // contextValue는 'contributes/menus/view/item/context'에서 prismFile.delete, issue.delete 명령을 구분하기 위해서 사용한다.
     this.contextValue = 'IssueItem'
     // PrismItem과 마찬가지 이유로 arguments로 [this]를 전달하는데 IssueItem은 issue의 값을 참조할 수 있어야 한다.
     this.command = {
-      command: 'CodePrism.command.gotoIssue',
+      command: 'CodePrism.command.issue.goto',
       title: 'Open',
       arguments: [this],
     }
@@ -225,6 +225,10 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<TreeElement> {
     })
 
     PrismManager.subscribe('update-note', (data: SubscribeType) => {
+      this.refreshPrismView()
+    })
+
+    PrismManager.subscribe('remove-note', (data: SubscribeType) => {
       this.refreshPrismView()
     })
   }

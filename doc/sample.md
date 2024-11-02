@@ -2,26 +2,33 @@
 
 ```ts
 /**
- * Renames a prism file if it exists. Prompts the user to enter a new name for the prism file.
- * If the new name is valid and the file does not already exist, the file is renamed.
+ * Collapses the view in the Prism file provider.
+ * This method triggers the collapse functionality of the prismFileProvider.
  */
-async renamePrismFile(prism: Prism) {
-  if (!PrismFileManager.isPrismFileExists(prism.name)) {
-    vscode.window.showWarningMessage('The prism does not exist.')
-    return
+async collapseView() {
+  const collapseAllItems = async (item: TreeElement) => {
+    await this.prismTreeView.reveal(item, { expand: false, focus: false, select: false })
+    const children = await this.prismTreeProvider.getChildren(item)
+    if (children) {
+      for (const child of children) {
+        await collapseAllItems(child)
+      }
+    }
   }
 
-  const name = await vscode.window.showInputBox({
-    placeHolder: 'Enter new name',
-    prompt: 'Rename: ',
-    value: prism.name,
-  })
-  if (name === undefined || name === '') {
-    return
-  }
+  // 축소는 항목을 모두 새로 그려야만 하는 것으로 보인다.
+  // reveal의 options의 expand는 항목이 표시될 때 항목을 확장할 것인지 여부이다. 숫자로 확장의 깊이를 지정할 수 있다.
+  // 중요한 것은 expand가 false이면 항목이 확장되어져 표시되지 않을 뿐 이미 확장되어져 있는 것이 축소되는 것은 아니다.
+  // const rootElements = await this.prismFileProvider.getChildren()
+  // for (const rootElement of rootElements) {
+  //   await collapseAllItems(rootElement)
+  // }
 
-  //todo : check if the file already exists
-  return PrismManager.renamePrism(prism.name, name)
+  // this.prismFileProvider.refreshPrismView()
+
+  // 아래의 expandAll command는 없다.
+  // vscode.commands.executeCommand('workbench.actions.treeView.CodePrism.view.prismView.expandAll')
+  vscode.commands.executeCommand('workbench.actions.treeView.CodePrism.view.prismView.collapseAll')
 }
 ```
 
