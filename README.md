@@ -16,20 +16,70 @@ Code Prism is basically a code review program. but it's simple to use and includ
 
 ![demo](./assets/code-prism-demo.gif)
 
-## 🔗 Concept
+## Getting Started
+
+In order to get started, install the [CodePrism extension](https://marketplace.visualstudio.com/items?itemName=NegahamaOrg.codeprism), and then following one of the following guides:
+
+- [Concept](#concept)
+- [Features](#features)
+
+## Concept
+
+Many developers spend as much time understanding and analyzing systems developed by others as developing their own programs.
+
+Sometimes you simply refer to a well-defined API, but sometimes you need to know enough about that system to participate in the development process. In this case, understanding and analyzing large and complex systems is a challenging task.
+
+It's not just the individual's ability and effort that you need when you want to understand what purpose this function was used, why they use it like this, and how it might affect other parts of the system.
+
+Code prism aims to help you understand and analyze systems
+
+There are a number of tools available to assist with analysis. These tools analyze the code on their own and display their information in documents and diagrams.
+
+Of course, we have to use these tools. But I think it's important to help you find the Aha-moment among the many pieces of information that a lot of tools give out.
+
+In the process of understanding and analysis, I noted that there are more information to be searched, referenced, and recorded than I thought.
+
+So I'm trying to make a tool that the whole system can come in at a glance by showing useful information as much as and effectively .
+
+As a starting point, I'm going to start with something that can be easily viewed and recorded with various information generated in the analysis process, related documents, sites, my own comments, and so on.
+
+## Features
+
+Code Prism is consist of 3 parts
+
+- Recording metadata
+- Auto-search information of symbol
+- link documents(markdown file) to source
+
+### Recoding metadata
+
+- Manage information associated with a specific part of the document without changing the source.
+
+![screen shot](./assets/Screenshot181558.png)
+
+#### Prism file
 
 The prism file and the document correspond one-to-one, and one prism file may contain multiple `Issue`s.
 
+#### Issue
+
 `Issue` is opinions on specific parts of the document. Therefore, `Issue` is linked to specific parts of the document and can have multiple `Note`s.
+
+#### Note
 
 `Note` is opinion and information, it can be simple text, link, image, video and document.
 
-## 🔗 Features
+### Auto-search
 
-- Manage information associated with a specific part of the document without changing the source.
 - Automatically displays definition information for the symbol at the current cursor position.
 - Language independent. Works in any language that supports hovers.
 - Supports syntax highlighting and markdown rendering in the docs view.
+
+![screen shot](./assets/Screenshot211953.png)
+
+### link documents
+
+![screen shot](./assets/Screenshot182825.png)
 
 ## 🔗 Release Notes
 

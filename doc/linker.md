@@ -25,12 +25,12 @@ file:///./sample?#L10-L20              범위 지정(ctrl+click(O)), follow link
 ## 코드 프리즘이 지원하는 방법
 
 ```ts
-[code](file:///d:/Samuel/...prism/Prism.ts) 절대 경로
-[code](d:/Samuel/...prism/Prism.ts)         지원하지 않음
-[code](./../src/code-prism/Prism.ts)        상대 경로
-[code](/src/code-prism/Prism.ts)            root 경로
-[code](src/code-prism/Prism.ts)             지원하지 않음
-[docu](./sample.md)                        상대 경로
+[code](file:///d:/Samuel/...prism/Prism.ts)  절대 경로
+[code](d:/Samuel/...prism/Prism.ts)          지원하지 않음
+[code](./../src/code-prism/Prism.ts)         상대 경로
+[code](/src/code-prism/Prism.ts)             root 경로
+[code](src/code-prism/Prism.ts)              지원하지 않음
+[docu](./sample.md)                          상대 경로
 ```
 
 ### 1. 마크다운 방식 지원
