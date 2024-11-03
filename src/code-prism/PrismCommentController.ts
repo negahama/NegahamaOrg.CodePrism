@@ -1,4 +1,5 @@
 import * as vscode from 'vscode'
+import * as assert from 'assert'
 import * as path from 'path'
 
 import { Issue, Note, Prism } from './Prism'
@@ -20,9 +21,8 @@ function createAuthor(name: string): vscode.CommentAuthorInformation {
 }
 
 /**
- * Represents a issue comment in a VS Code extension.
- * Implements the `vscode.Comment` interface.
- * id, label, savedBody, thread가 추가하였다.
+ * Represents a note description that implements the vscode.Comment interface.
+ * This class is used to manage and display comments within the Code Prism extension.
  */
 export class NoteDescription implements vscode.Comment {
   /**
@@ -31,7 +31,7 @@ export class NoteDescription implements vscode.Comment {
   id: string
 
   /**
-   * 원래는 information about the author of a comment 이지만 여기서는 type of comment로 쓰인다.
+   * 원래는 information about the author of a comment 이지만 여기서는 category of note로 쓰인다.
    * 이유는 Code Prism에서는 author가 의미가 없을 뿐만 아니라 comment panel에서 author의 이름이 가장 먼저 표시되기 때문이다.
    *
    * @property {string} name - The name of the author.
@@ -40,8 +40,7 @@ export class NoteDescription implements vscode.Comment {
   author: vscode.CommentAuthorInformation
 
   /**
-   * A label associated with the PrismCommentController.
-   * This label is used to identify or describe the controller.
+   * label은 author name 옆에 표시되는 것으로 여기서는 note의 생성 시간으로 사용된다.
    */
   label: string
 
@@ -51,8 +50,8 @@ export class NoteDescription implements vscode.Comment {
   savedBody: string | vscode.MarkdownString
 
   /**
-   * Represents the context value associated with this instance.
-   * This value is used to determine the context in which this instance operates.
+   * 이 개체에 대응하는 note에서 link를 가지고 있는지를 나타낸다.
+   * contributes/menus/comments/comment/title 에서 note.makeMarkdown의 표시 여부를 결정하기 위해서 사용된다.
    */
   contextValue: string
 
@@ -83,9 +82,11 @@ export class NoteDescription implements vscode.Comment {
 
 /**
  * The `PrismCommentController` class is responsible for managing comments within the Visual Studio Code environment.
- * This controller facilitates the creation, modification, and deletion of comments in the editor.
+ * It allows for the creation, modification, and deletion of comments in the editor.
  *
  * @class PrismCommentController
+ * @implements {vscode.Disposable}
+ *
  * @property {vscode.CommentController} commentController - The controller for managing comments.
  * @property {Map<string, vscode.CommentThread[]>} commentThreads - A map that associates a string key with an array of VS Code comment threads.
  *
@@ -94,14 +95,21 @@ export class NoteDescription implements vscode.Comment {
  *
  * @method dispose - Disposes of the comment controller if it exists.
  * @method reload - Asynchronously loads Prism files and initializes comment threads for each issue.
- * @method addIssueByContext - Adds a issue to the active text editor at the specified line and column.
- * @method deleteIssue - Deletes a issue associated with the given comment thread.
- * @method addNote - Adds a description to a issue within a comment thread.
- * @method cancelAddNote - Cancels the addition of a issue or note comment by removing it from the thread.
- * @method editNote - Edits a issue comment by setting its mode to `Editing`.
- * @method deleteNote - Deletes a issue comment from its thread.
- * @method saveNote - Saves the body of a issue comment and updates its mode to preview.
- * @method cancelSaveNote - Cancels the save operation for a issue comment by restoring its original body and setting its mode to preview.
+ * @method addIssueByContext - Adds an issue to the Prism context based on the current selection in the active text editor.
+ * @method deleteIssue - Deletes a comment thread or an issue item.
+ * @method addNote - Adds a description to an issue within a comment thread.
+ * @method cancelAddNote - Cancels the addition of a note in a comment thread.
+ * @method deleteNote - Deletes a note from its thread. If the thread becomes empty after the deletion, the thread is disposed of.
+ * @method changeNoteCategory - Changes the category of a note in a thread.
+ * @method makeMarkdown - Generates a markdown file for a given note description.
+ * @method editNote - Edits the description of an issue by setting the mode of the corresponding comment to editing.
+ * @method saveNote - Saves the body of an issue comment and updates its mode to preview.
+ * @method cancelSaveNote - Cancels the save operation for an issue comment by restoring its original body and setting its mode to preview.
+ * @method getThreadTitle - Retrieves the label for a given comment thread.
+ * @method doItForNodeFromThread - Executes a callback function for a specific note within a comment thread.
+ * @method createNoteDescription - Converts a `Note` object to a `NoteDescription` object.
+ * @method appendLinkToNoteContent - Appends a link to the note's body if it exists and ensures that the link is in an absolute path format.
+ * @method extractLinkFromNoteContent - Extracts the original content from a note's body by removing any appended link information.
  */
 export class PrismCommentController {
   /**
@@ -130,7 +138,6 @@ export class PrismCommentController {
    * It also subscribes to various events from the PrismManager to handle comment creation, description appending, description updating, and description removal.
    *
    * Subscriptions:
-   * - 'create-prism': Handles the creation of a new prism (TODO: Implement functionality).
    * - 'append-note': Handles appending a description to a prism (TODO: Implement functionality).
    * - 'update-note': Handles updating a description of a prism (TODO: Implement functionality).
    * - 'remove-note': Handles removing a description from a prism. It iterates through all comment threads and removes the comment that matches the description ID.
@@ -174,13 +181,12 @@ export class PrismCommentController {
     })
 
     PrismManager.subscribe('remove-note', (data: SubscribeType) => {
-      this.commentThreads.forEach(ta => {
-        ta.forEach(thread => {
-          const found = thread.comments.find(cmt => (cmt as NoteDescription).id === data.note?.id)
-          if (found) {
-            thread.comments = thread.comments.filter(cmt => cmt !== found)
-          }
-        })
+      assert.ok(data.prism)
+      assert.ok(data.issue)
+      assert.ok(data.note)
+
+      this.commentThreads.get(data.prism.name)?.forEach(thread => {
+        thread.comments = thread.comments.filter(cmt => (cmt as NoteDescription).id !== data.note?.id)
       })
     })
   }
@@ -238,14 +244,9 @@ export class PrismCommentController {
         // comment의 thread는 여기서 설정한다.
         thread.label = issue.title.trim()
         thread.contextValue = issue.id
-        thread.comments.forEach(cmt => {
-          const comment = cmt as NoteDescription
-          comment.thread = thread
-        })
+        thread.comments.forEach(cmt => ((cmt as NoteDescription).thread = thread))
 
-        if (this.commentThreads.has(prism.name)) {
-          this.commentThreads.get(prism.name)?.push(thread)
-        }
+        this.commentThreads.get(prism.name)?.push(thread)
       })
     })
     output.log('Loading Prism files... Done')
@@ -330,12 +331,77 @@ export class PrismCommentController {
     // 이것 실제 사용되는 position이므로 0 base이므로 변경하지 않는다.
     const thread = this.commentController.createCommentThread(vscode.Uri.file(source), range, [comment])
     thread.label = title.trim()
+    // comment thread는 issue에 대응하는데 comment thread를 별도로 구현할 수 없기 때문에 issue의 id를 contextValue를 사용해서 설정한다.
     thread.contextValue = issue.id
     comment.thread = thread
 
-    if (this.commentThreads.has(prismName)) {
-      this.commentThreads.get(prismName)?.push(thread)
+    this.commentThreads.get(prismName)?.push(thread)
+  }
+
+  /**
+   * Changes the position of an issue within a comment thread.
+   *
+   * This function prompts the user to enter a new line number for the issue.
+   * If the user leaves the input blank, the current selection or the end of the document is used.
+   * The issue's position is then updated accordingly.
+   *
+   * @param thread - The comment thread whose issue position is to be changed.
+   *
+   * @returns A promise that resolves when the issue position has been updated.
+   *
+   * @remarks
+   * - If there is no active text editor, the function logs an error and returns.
+   * - If the user input is invalid or the issue cannot be found, appropriate error messages are logged.
+   */
+  async changeIssuePosition(thread: vscode.CommentThread) {
+    const response = await vscode.window.showInputBox({
+      placeHolder: 'e.g., 1-2, 3, ...',
+      prompt: `Enter the line # for this note or Leave blank to use the selection/document end `,
+      value: thread.range.start.line.toString(),
+    })
+
+    let range: vscode.Range
+    if (response === undefined || response === '') {
+      const editor = vscode.window.activeTextEditor
+      if (!editor) {
+        console.log('No active text editor')
+        return
+      }
+
+      if (editor.selection.isEmpty) {
+        return
+      }
+
+      range = editor.selection
+    } else {
+      const lineNumber = parseInt(response) - 1
+      range = new vscode.Range(new vscode.Position(lineNumber, 0), new vscode.Position(lineNumber, 0))
     }
+
+    thread.range = range
+
+    const prismName = path.parse(thread.uri.fsPath).name
+    const prism = PrismManager.getPrism(prismName)
+    if (!prism) {
+      console.error('error in changeIssuePosition: No prism, name: ' + prismName)
+      return
+    }
+
+    // thread.contextValue는 issue의 id를 가지고 있다.
+    const issue = prism.getIssue(thread.contextValue!)
+    if (!issue) {
+      console.error('error in changeIssuePosition: No issue')
+      console.log('  thread.label:', thread.label?.trim() ?? '')
+      console.log('  thread.contextValue:', thread.contextValue)
+      return
+    }
+
+    issue.source.startLine = range.start.line + 1
+    issue.source.startColumn = range.start.character
+    issue.source.endLine = range.end.line + 1
+    issue.source.endColumn = range.end.character
+
+    PrismManager.updatePrism(prism)
   }
 
   /**
@@ -535,8 +601,8 @@ export class PrismCommentController {
     }
 
     const category = await vscode.window.showInputBox({
-      placeHolder: 'Enter new category: e.g., "todo", "fix", "refactor", "enhancement"',
-      prompt: `Change the category: `,
+      placeHolder: 'e.g., "General", "Todo", "Review", "Document", anything you want',
+      prompt: `Enter new category `,
       value: desc.author.name,
     })
     if (category === undefined || category === '') {
@@ -588,7 +654,9 @@ export class PrismCommentController {
       return
     }
 
-    const link = 'file:///./docs/' + desc.id + '.md'
+    // note와 연결된 markdown 파일은 prism folder에서의 상대 경로로 저장된다.
+    // .prism.json 파일을 텍스트로 열었을 때 해당 markdown 파일의 link가 동작할 수 있도록 아래와 같이 설정한다.
+    const link = 'file:///./docs/' + result.note.id + '.md'
 
     // 파일이 새로 생성되었을 경우에는 body에 link를 추가하고 note의 link를 업데이트한다.
     // saveNote의 과정과 거의 동일하다. 단지 note의 link를 업데이트하는 것만 추가되었다.
@@ -713,6 +781,29 @@ export class PrismCommentController {
   }
 
   /**
+   * Retrieves the label for a given comment thread. If the thread does not have a label,
+   * it attempts to extract the label from the text document at the thread's location.
+   * If no label is found, it returns a default label.
+   *
+   * @param thread - The comment thread for which to retrieve the label.
+   * @returns A promise that resolves to the label of the comment thread.
+   */
+  private async getThreadTitle(thread: vscode.CommentThread): Promise<string> {
+    let title = thread.label
+    if (!title) {
+      await vscode.workspace.openTextDocument(thread.uri).then(doc => {
+        const range = doc.lineAt(thread.range.start.line).range
+        title = doc.getText(range) + ' in ' + thread.uri.fsPath + '#' + (thread.range.start.line + 1)
+      })
+    }
+    if (!title) {
+      return '# No title'
+    }
+
+    return title.trim()
+  }
+
+  /**
    * Executes a callback function for a specific note within a comment thread.
    *
    * @param thread - The comment thread containing the note.
@@ -737,10 +828,11 @@ export class PrismCommentController {
       return
     }
 
+    // thread.contextValue는 issue의 id를 가지고 있다.
     const issue = prism.getIssue(thread.contextValue!)
     if (!issue) {
-      const issueTitle = thread.label?.trim() ?? ''
-      console.error('error in getNodeFromThread: No issue, title: ' + issueTitle)
+      console.error('error in getNodeFromThread: No issue')
+      console.log('  thread.label:', thread.label?.trim() ?? '')
       console.log('  thread.contextValue:', thread.contextValue)
       return
     }
@@ -752,29 +844,6 @@ export class PrismCommentController {
     }
 
     callback(prism, issue, note)
-  }
-
-  /**
-   * Retrieves the label for a given comment thread. If the thread does not have a label,
-   * it attempts to extract the label from the text document at the thread's location.
-   * If no label is found, it returns a default label.
-   *
-   * @param thread - The comment thread for which to retrieve the label.
-   * @returns A promise that resolves to the label of the comment thread.
-   */
-  private async getThreadTitle(thread: vscode.CommentThread): Promise<string> {
-    let title = thread.label
-    if (!title) {
-      await vscode.workspace.openTextDocument(thread.uri).then(doc => {
-        const range = doc.lineAt(thread.range.start.line).range
-        title = doc.getText(range) + ' in ' + thread.uri.fsPath + '#' + (thread.range.start.line + 1)
-      })
-    }
-    if (!title) {
-      return '# No title'
-    }
-
-    return title.trim()
   }
 
   /**
@@ -816,20 +885,20 @@ export class PrismCommentController {
 
     // comment controller의 입력창에서 설정하는 링크는 이것이 비록 마크다운 형태로 처리되어도 `file:///절대경로` 만 인식한다.
     if (noteLink) {
-      let root = PrismFileManager.getWorkspacePath() ?? ''
-      let link = noteLink.replace('file:///', '')
-      if (link.startsWith('./')) {
-        // prism folder에서의 상대 경로인 경우에는...
+      let root = PrismFileManager.getWorkspacePath()
+      const linkPath = noteLink.replace('file:///', '')
+      if (linkPath.startsWith('./')) {
+        // prism folder에서의 상대 경로인 경우...
         // 이 링크가 prism file에 저장되어져 있기 때문에 여기서 현재 폴더는 prism folder이다.
         root = PrismFileManager.getPrismFolderPath()
       }
 
       // string으로 저장할시에는 \를 /로 변경해야 한다. 그렇지 않으면 . 으로 시작하는 폴더가 상위 폴더와 분리가 되지 않는다.
-      link = path.join(root, link).replaceAll('\\', '/')
+      const link = path.join(root, linkPath).replaceAll('\\', '/')
 
       result.push('\n---')
       result.push('_Modifing this section is useless!_')
-      result.push(`- [linked document - ${noteLink}](file:///${link})`)
+      result.push(`- [linked document - ${linkPath}](file:///${link})`)
     }
     return result.join('\n')
   }

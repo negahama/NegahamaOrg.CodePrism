@@ -21,12 +21,12 @@ export class PrismFileManager {
   /**
    * Retrieves the root path of the current workspace.
    *
-   * @returns {string | undefined} The root path of the workspace if available, otherwise `undefined`.
+   * @returns {string} The root path of the workspace if available, otherwise empty string.
    *
    * @remarks
    * If no workspace is open, an error message is logged to the console.
    */
-  static getWorkspacePath(): string | undefined {
+  static getWorkspacePath(): string {
     // const document = vscode.window.activeTextEditor?.document
     // if (document) {
     //   return vscode.workspace.getWorkspaceFolder(document.uri)?.uri?.fsPath ?? ''
@@ -39,6 +39,7 @@ export class PrismFileManager {
     } else {
       console.error('작업 영역이 열려 있지 않습니다.')
     }
+    return ''
   }
 
   /**
@@ -58,7 +59,7 @@ export class PrismFileManager {
    * @returns {string} The full path to the Prism folder.
    */
   static getPrismFolderPath(): string {
-    return path.join(this.getWorkspacePath() ?? '', this.getPrismFolderName())
+    return path.join(this.getWorkspacePath(), this.getPrismFolderName())
   }
 
   /**
@@ -136,7 +137,7 @@ export class PrismFileManager {
    * @returns The relative path from the workspace path to the given file path.
    */
   static getRelativePath(filePath: string): string {
-    return path.relative(this.getWorkspacePath() ?? '', filePath)
+    return path.relative(this.getWorkspacePath(), filePath)
   }
 
   /**

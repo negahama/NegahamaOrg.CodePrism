@@ -2,7 +2,7 @@
   "name": "codeprism",
   "displayName": "CodePrism",
   "description": "Source code analysis tool",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "publisher": "NegahamaOrg",
   "author": "Samuel Kang",
   "homepage": "https://github.com/negahama/NegahamaOrg.CodePrism",
@@ -47,6 +47,12 @@
         "command": "CodePrism.command.issue.addByContext",
         "title": "Add new issue",
         "icon": "$(add)"
+      },
+      {
+        "category": "Code Prism",
+        "command": "CodePrism.command.issue.changePosition",
+        "title": "Change position of this issue",
+        "icon": "$(location)"
       },
       {
         "category": "Code Prism",
@@ -199,6 +205,10 @@
           "when": "false"
         },
         {
+          "command": "CodePrism.command.issue.changePosition",
+          "when": "false"
+        },
+        {
           "command": "CodePrism.command.issue.goto",
           "when": "false"
         },
@@ -310,6 +320,11 @@
         }
       ],
       "comments/commentThread/title": [
+        {
+          "command": "CodePrism.command.issue.changePosition",
+          "group": "navigation",
+          "when": "commentController == code-prism-issue-tracker"
+        },
         {
           "command": "CodePrism.command.issue.delete",
           "group": "navigation",

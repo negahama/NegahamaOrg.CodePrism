@@ -177,7 +177,7 @@ export class Prism {
         // source file은 workspace root 경로로 저장한다.
         // 이때 마크다운에서 workspace root 경로는 반드시 / 로 시작해야 하기 때문에
         // CodePrism 전체에서 workspace root 경로는 모두 / 로 시작하도록 정해져 있다.
-        file: '/' + PrismFileManager.getRelativePath(source),
+        file: '/' + PrismFileManager.getRelativePath(source).replace(/\\/g, '/'),
         startLine: range.start.line + 1,
         startColumn: range.start.character,
         endLine: range.end.line + 1,
@@ -230,7 +230,7 @@ export class Prism {
     }
 
     issue.notes.push(note)
-    this.pubSub?.publish('append-note', { issue, note })
+    this.pubSub?.publish('append-note', { prism: this, issue, note })
     // console.log(`🚀 ~ appendNote: ${issueId}, ${note.id}`)
     return note
   }
@@ -257,7 +257,7 @@ export class Prism {
     }
 
     Object.assign(exist, note)
-    this.pubSub?.publish('update-note', { note: note })
+    this.pubSub?.publish('update-note', { prism: this, issue, note })
     // console.log(`🚀 ~ updateNote: ${issueId}, ${note.id}`)
   }
 
@@ -280,7 +280,7 @@ export class Prism {
     }
 
     issue.notes = issue?.notes.filter(n => n.id !== noteId)
-    this.pubSub?.publish('remove-note', { issue, note })
+    this.pubSub?.publish('remove-note', { prism: this, issue, note })
     // console.log(`🚀 ~ removeNote: ${issueId}, ${note.id}`)
   }
 

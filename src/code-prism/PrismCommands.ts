@@ -133,6 +133,12 @@ export async function prism_activate(context: vscode.ExtensionContext) {
   )
 
   context.subscriptions.push(
+    vscode.commands.registerCommand('CodePrism.command.issue.changePosition', (thread: vscode.CommentThread) => {
+      commentController.changeIssuePosition(thread)
+    })
+  )
+
+  context.subscriptions.push(
     vscode.commands.registerCommand('CodePrism.command.issue.goto', (item: IssueItem) => {
       PrismViewer.showPrismViewer(item.prism, item.issue)
     })

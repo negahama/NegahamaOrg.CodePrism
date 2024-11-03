@@ -33,22 +33,11 @@ The prism file and the document correspond one-to-one, and one prism file may co
 
 ## 🔗 Release Notes
 
-### 1.1.0
+### 1.2.0 - November 3, 2024
 
-> 🚨 This version is not compatible with the previous versions  
->  (if you need your data, please rename the `context` to `content` in all prism files in your prism folder(it is normally `<your project>.prism`) T.T)
-
-- improve function about link in comment controller's comment
-
-### 1.0.8
-
-improve the link function
-
-### 1.0.7
-
-fix the bug that don't show the linked file's contents in hover tooltip
-
----
+1. implement to cahnge issue's position
+2. implement to change note's category
+3. implement to make markdown file related the note
 
 ## 💚 Code Prism is base of 💚
 
@@ -56,6 +45,7 @@ fix the bug that don't show the linked file's contents in hover tooltip
 - [Definition View](https://marketplace.visualstudio.com/items?itemName=stevepryde.definition-view)
 - [Code Explorer](https://marketplace.visualstudio.com/items?itemName=tianjianchn.code-explorer)
 - [Project Notes](https://marketplace.visualstudio.com/items?itemName=willasm.pnotes)
+- [CodeTour](https://marketplace.visualstudio.com/items?itemName=vsls-contrib.codetour)
 
 ## 🔗 Following extension guidelines
 
