@@ -455,4 +455,14 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<TreeElement> {
     this.items.push(new IssueItem(prism, issue))
     this.refreshPrismView()
   }
+
+  /**
+   * Deletes an item from the items array based on the provided label.
+   *
+   * @param name - The label of the item to be deleted.
+   */
+  deleteIssueItem(prism: Prism, issue: Issue) {
+    this.items = this.items.filter(item => !(item instanceof IssueItem && item.prism === prism && item.issue === issue))
+    this.refreshPrismView()
+  }
 }
