@@ -18,38 +18,53 @@
 
   let hasUpdated = false
 
+  document.getElementById('openFindAllReference')?.addEventListener('click', function (event) {
+    event.preventDefault()
+    vscode.postMessage({ command: 'openFindAllReference' })
+  })
+
+  document.getElementById('openFindAllImplement')?.addEventListener('click', function (event) {
+    event.preventDefault()
+    vscode.postMessage({ command: 'openFindAllImplement' })
+  })
+
+  document.getElementById('openShowCallHierarchy')?.addEventListener('click', function (event) {
+    event.preventDefault()
+    vscode.postMessage({ command: 'openShowCallHierarchy' })
+  })
+
+  document.getElementById('openFindInFiles')?.addEventListener('click', function (event) {
+    event.preventDefault()
+    vscode.postMessage({ command: 'openFindInFiles' })
+  })
+
+  document.getElementById('openSearchEditor')?.addEventListener('click', function (event) {
+    event.preventDefault()
+    vscode.postMessage({ command: 'openSearchEditor' })
+  })
+
   // Handle messages sent from the extension to the webview
   window.addEventListener('message', event => {
     const message = event.data // The json data that the extension sent
     switch (message.type) {
       case 'update': {
-        updateContent(message.body)
+        if (main) {
+          main.innerHTML = message.body
+          // vscode.setState({ body: message.body });
+        }
         hasUpdated = true
         break
       }
       case 'noContent': {
         if (!hasUpdated || message.updateMode === 'live') {
-          setNoContent(message.body)
+          if (main) {
+            main.innerHTML = `<p class="no-content">${message.body}</p>`
+            // vscode.setState({ noContent: message.body });
+          }
         }
         hasUpdated = true
         break
       }
     }
   })
-
-  /**
-   * @param {string} contents
-   */
-  function updateContent(contents) {
-    main.innerHTML = contents
-    // vscode.setState({ body: contents });
-  }
-
-  /**
-   * @param {string} message
-   */
-  function setNoContent(message) {
-    main.innerHTML = `<p class="no-content">${message}</p>`
-    // vscode.setState({ noContent: message });
-  }
 })()

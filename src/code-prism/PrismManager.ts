@@ -1,5 +1,4 @@
 import * as vscode from 'vscode'
-import * as fs from 'fs'
 
 import { Note, Issue, Prism } from './Prism'
 import { PrismFileManager } from './PrismFileManager'
@@ -162,7 +161,7 @@ export class PrismManager {
    */
   static createPrismFromFile(file: string): Prism {
     // 파일을 읽어 텍스트로 변환
-    const text = fs.readFileSync(file, 'utf-8')
+    const text = PrismFileManager.readFile(file)
 
     // 텍스트를 JSON 객체로 파싱
     const json = JSON.parse(text)
@@ -206,31 +205,10 @@ export class PrismManager {
    * @returns {Prism[]} An array of loaded Prism objects.
    */
   static async loadPrismFiles(): Promise<Prism[]> {
-    // if (this.isPrismFolderExists()) {
-    //   const prismFolderPath = this.getPrismFolderPath()
-    //   const files = fs.readdirSync(prismFolderPath)
-    //   const pa: Prism[] = []
-    //   files.forEach(file => {
-    //     const filePath = path.resolve(prismFolderPath, file)
-    //     const stats = fs.statSync(filePath)
-    //     if (stats.isFile()) {
-    //       const prism = PrismReader.read(filePath)
-    //       pa.push(prism)
-    //     }
-    //   })
-    //   this.prisms = pa
-    // }
-
-    if (!PrismFileManager.isPrismFolderExists()) {
-      return []
-    }
-
-    let folderName = PrismFileManager.getPrismFolderName()
-    let files = await vscode.workspace.findFiles(`**/${folderName}/*.prism.json`, null, 500)
-
     this.prisms = []
+    const files = await PrismFileManager.getPrismFileNames()
     files.forEach(file => {
-      this.prisms.push(this.createPrismFromFile(file.fsPath))
+      this.prisms.push(this.createPrismFromFile(file))
     })
     return this.prisms
   }

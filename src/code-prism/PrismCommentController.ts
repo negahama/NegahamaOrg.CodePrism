@@ -44,10 +44,14 @@ export class NoteDescription implements vscode.Comment {
    */
   label: string
 
+  mode: vscode.CommentMode
+
+  body: vscode.MarkdownString
+
   /**
    * The saved body of the comment, used for the Cancel button.
    */
-  savedBody: string | vscode.MarkdownString
+  savedBody: vscode.MarkdownString
 
   /**
    * 이 개체에 대응하는 note에서 link를 가지고 있는지를 나타낸다.
@@ -68,13 +72,18 @@ export class NoteDescription implements vscode.Comment {
     // 왜 그런지는 모르겠지만 여기서의 note는 복사되어지는 것으로 보인다.
     // 즉 PrismManager에서 같은 note를 변경해도 여기서 변경되지 않는다.
     private note: Note,
-    public body: string | vscode.MarkdownString,
-    public mode: vscode.CommentMode,
     public thread?: vscode.CommentThread
   ) {
     this.id = note.id
     this.author = createAuthor(note.category)
     this.label = note.createdAt
+    this.mode = vscode.CommentMode.Preview
+    // note content를 comment body로 변환한다.
+    // 이때 comment에는 표시되지 않는 issue의 정보(예를들면 link)를 comment.body에 추가한다.
+    // 또 note의 body에 있는 링크 정보를 절대 경로로 변환해 준다.(comment에서는 상대 경로를 지원하지 않음)
+    this.body = convertNoteToComment(note)
+    // body가 변경되면 매번 새로 생성되기 때문에 savedBody는 이전 body의 내용을 가지고 있게 된다.
+    // 즉 복사되어야 할 필요는 없다.
     this.savedBody = this.body
     this.contextValue = note.link ? 'have-link' : 'no-link'
   }
@@ -107,9 +116,6 @@ export class NoteDescription implements vscode.Comment {
  * @method cancelSaveNote - Cancels the save operation for an issue comment by restoring its original body and setting its mode to preview.
  * @method getThreadTitle - Retrieves the label for a given comment thread.
  * @method doItForNodeFromThread - Executes a callback function for a specific note within a comment thread.
- * @method createNoteDescription - Converts a `Note` object to a `NoteDescription` object.
- * @method appendLinkToNoteContent - Appends a link to the note's body if it exists and ensures that the link is in an absolute path format.
- * @method extractLinkFromNoteContent - Extracts the original content from a note's body by removing any appended link information.
  */
 export class PrismCommentController {
   /**
@@ -221,7 +227,7 @@ export class PrismCommentController {
     if (!prisms) {
       prisms = await PrismManager.loadPrismFiles()
     }
-    output.log(`prisms's count: ${prisms.length}`)
+    output.log(`prism's count: ${prisms.length}`)
 
     prisms.forEach(prism => {
       output.log(`  prism: ${prism.name}, issue's count: ${prism.getIssuesCount()}`)
@@ -229,7 +235,7 @@ export class PrismCommentController {
       this.commentThreads.set(prism.name, [])
 
       prism.issues.forEach(async (issue): Promise<void> => {
-        const comments = issue.notes.map(note => this.createNoteDescription(note))
+        const comments = issue.notes.map(note => new NoteDescription(note))
 
         // 파일에 저장된 source의 line은 1 base이므로 실제 사용값인 0 base로 변경한다.
         const thread = this.commentController.createCommentThread(
@@ -302,7 +308,8 @@ export class PrismCommentController {
       }
     }
 
-    title += ' in ' + uri.fsPath + '#' + (range.start.line + 1)
+    title = '`' + title.trim() + '`'
+    title += ` in ${PrismFileManager.getRelativePath(uri.fsPath)}#${range.start.line + 1}`
     title = title.trim()
 
     // prism이 없으면 새로 만든다.
@@ -314,19 +321,28 @@ export class PrismCommentController {
 
     // context menu에서 issue를 추가할 때는 이미 issue가 있는지를 title말고 다른 것으로는 알 방법이 없다.
     // issue가 없으면 새로 만든다.
+    let isNewIssue = false
     let issue = prism.getIssueByTitle(title)
     if (!issue) {
-      issue = prism.appendIssueDetails(title, source, range)
+      // issue를 만들고 note를 추가한 다음에 issue를 추가해야 한다.
+      issue = prism.createIssueDetails(title, source, range)
+      isNewIssue = true
     }
 
     // 주석 추가
     const note = Prism.getDefaultNote()
 
-    prism.appendNote(issue.id, note)
+    // issue가 새로 만들어진 경우에는 append-issue만 발생시킨다.
+    if (isNewIssue) {
+      issue.notes.push(note)
+      prism.appendIssue(issue)
+    } else {
+      prism.appendNote(issue.id, note)
+    }
     PrismManager.updatePrism(prism)
 
     // comment의 thread는 thread를 생성한 후 설정한다.
-    const comment = this.createNoteDescription(note)
+    const comment = new NoteDescription(note)
 
     // 이것 실제 사용되는 position이므로 0 base이므로 변경하지 않는다.
     const thread = this.commentController.createCommentThread(vscode.Uri.file(source), range, [comment])
@@ -483,14 +499,9 @@ export class PrismCommentController {
     }
 
     const note = Prism.getDefaultNote(reply.text)
-    const newComment = new NoteDescription(
-      note,
-      new vscode.MarkdownString(convertLink(reply.text)),
-      vscode.CommentMode.Preview,
-      reply.thread
-    )
+    const comment = new NoteDescription(note, reply.thread)
 
-    reply.thread.comments = [...reply.thread.comments, newComment]
+    reply.thread.comments = [...reply.thread.comments, comment]
 
     // prism이 없으면 새로 만든다.
     const prism = PrismManager.getPrism(prismName, true)
@@ -502,9 +513,13 @@ export class PrismCommentController {
     const title = await this.getThreadTitle(reply.thread)
 
     // issue가 없으면 새로 만든다.
+    let isNewIssue = false
     let issue = prism.getIssueByTitle(title)
     if (!issue) {
-      issue = prism.appendIssueDetails(title, source, reply.thread.range)
+      // issue를 만들고 note를 추가한 다음에 issue를 추가해야 한다.
+      // 만들면서 추가되면 여기서 설정하지 않는 값들 특히 note등이 설정되지 않은 상태에서 append-issue가 처리되는 문제점이 있다.
+      issue = prism.createIssueDetails(title, source, reply.thread.range)
+      isNewIssue = true
     }
 
     if (isNewThread) {
@@ -512,7 +527,14 @@ export class PrismCommentController {
       reply.thread.contextValue = issue.id
     }
 
-    prism.appendNote(issue.id, { ...note, content: this.extractLinkFromNoteContent(note.content) })
+    // issue가 새로 만들어진 경우에는 append-issue만 발생시킨다.
+    if (isNewIssue) {
+      issue.notes.push(note)
+      prism.appendIssue(issue)
+    } else {
+      prism.appendNote(issue.id, note)
+    }
+
     PrismManager.updatePrism(prism)
   }
 
@@ -656,7 +678,7 @@ export class PrismCommentController {
 
     // note와 연결된 markdown 파일은 prism folder에서의 상대 경로로 저장된다.
     // .prism.json 파일을 텍스트로 열었을 때 해당 markdown 파일의 link가 동작할 수 있도록 아래와 같이 설정한다.
-    const link = 'file:///./docs/' + result.note.id + '.md'
+    result.note.link = 'file:///./docs/' + result.note.id + '.md'
 
     // 파일이 새로 생성되었을 경우에는 body에 link를 추가하고 note의 link를 업데이트한다.
     // saveNote의 과정과 거의 동일하다. 단지 note의 link를 업데이트하는 것만 추가되었다.
@@ -665,12 +687,9 @@ export class PrismCommentController {
     thread.comments = thread.comments.map(c => {
       const cmt = c as NoteDescription
       if (cmt.id === result.note.id) {
-        const contents = this.appendLinkToNoteContent(result.note.content, link)
-        const body = new vscode.MarkdownString(convertLink(contents))
-
-        cmt.body = body
-        cmt.savedBody = cmt.body
         cmt.mode = vscode.CommentMode.Preview
+        cmt.body = convertNoteToComment(result.note)
+        cmt.savedBody = cmt.body
         found = cmt
       }
       return cmt
@@ -679,11 +698,16 @@ export class PrismCommentController {
     // desc.thread와 desc.id를 이용해서 note를 찾은 다음 call back을 호출해서 note를 삭제한다.
     this.doItForNodeFromThread(thread, result.note.id, (prism: Prism, issue: Issue, note: Note) => {
       if (found) {
-        note.content = typeof found.body === 'string' ? found.body : found.body.value
+        const { category, contents } = convertCommentToNote(found.body)
+        if (category && note.category != category) {
+          note.category = category
+          found.author = createAuthor(category)
+        }
+        note.content = contents
       }
 
-      // note의 link와 content를 업데이트한다.
-      prism.updateNote(issue.id, { ...note, link, content: this.extractLinkFromNoteContent(note.content) })
+      // note의 link와 category, content가 업데이트되어진다.
+      prism.updateNote(issue.id, note)
       PrismManager.updatePrism(prism)
     })
   }
@@ -700,9 +724,16 @@ export class PrismCommentController {
       return
     }
 
+    const result = PrismManager.findPrismIssueNoteByNoteId(desc.id)
+    if (!result) {
+      return
+    }
+
     thread.comments = thread.comments.map(cmt => {
       if ((cmt as NoteDescription).id === desc.id) {
         cmt.mode = vscode.CommentMode.Editing
+        // 수정시에는 category를 수정할 수 있는 head는 표시하고 수정될 필요가 없는 link tail은 표시하지 않는다.
+        cmt.body = convertNoteToComment(result.note, true, false)
       }
 
       return cmt
@@ -735,13 +766,16 @@ export class PrismCommentController {
     thread.comments = thread.comments.map(c => {
       const cmt = c as NoteDescription
       if (cmt.id === desc.id) {
-        const descBody = typeof desc.body === 'string' ? desc.body : desc.body.value
-        const contents = this.appendLinkToNoteContent(descBody, result.note.link)
-        const body = new vscode.MarkdownString(convertLink(contents))
+        const { category, contents } = convertCommentToNote(desc.body)
+        if (category && result.note.category != category) {
+          result.note.category = category
+          cmt.author = createAuthor(category)
+        }
+        result.note.content = contents
 
-        cmt.body = body
-        cmt.savedBody = cmt.body
         cmt.mode = vscode.CommentMode.Preview
+        cmt.body = convertNoteToComment(result.note)
+        cmt.savedBody = cmt.body
         found = cmt
       }
       return cmt
@@ -750,10 +784,15 @@ export class PrismCommentController {
     // desc.thread와 desc.id를 이용해서 note를 찾은 다음 call back을 호출해서 note를 삭제한다.
     this.doItForNodeFromThread(thread, desc.id, (prism: Prism, issue: Issue, note: Note) => {
       if (found) {
-        note.content = typeof found.body === 'string' ? found.body : found.body.value
+        const { category, contents } = convertCommentToNote(found.body)
+        if (category && note.category != category) {
+          note.category = category
+          found.author = createAuthor(category)
+        }
+        note.content = contents
       }
 
-      prism.updateNote(issue.id, { ...note, content: this.extractLinkFromNoteContent(note.content) })
+      prism.updateNote(issue.id, note)
       PrismManager.updatePrism(prism)
     })
   }
@@ -793,7 +832,8 @@ export class PrismCommentController {
     if (!title) {
       await vscode.workspace.openTextDocument(thread.uri).then(doc => {
         const range = doc.lineAt(thread.range.start.line).range
-        title = doc.getText(range) + ' in ' + thread.uri.fsPath + '#' + (thread.range.start.line + 1)
+        title = '`' + doc.getText(range).trim() + '`'
+        title += ` in ${PrismFileManager.getRelativePath(thread.uri.fsPath)}#${thread.range.start.line + 1}`
       })
     }
     if (!title) {
@@ -845,81 +885,86 @@ export class PrismCommentController {
 
     callback(prism, issue, note)
   }
+}
 
-  /**
-   * Converts a `Note` object to a `NoteDescription` object.
-   *
-   * This method transforms a `Note` into a `NoteDescription` suitable for use in a comment system.
-   * It appends additional issue information (e.g., links) to the comment body.
-   *
-   * @param note - The `Note` object to be converted.
-   * @returns A `NoteDescription` object containing the converted note data.
-   */
-  private createNoteDescription(note: Note): NoteDescription {
-    // note를 comment로 변환한다.
-    // 이때 comment에는 표시되지 않는 issue의 정보(예를들면 link)를 comment.body에 추가한다.
-    // 또 note의 body에 있는 링크 정보를 절대 경로로 변환해 준다.(comment에서는 상대 경로를 지원하지 않음)
-    const contents = this.appendLinkToNoteContent(note.content, note.link)
-    const body = new vscode.MarkdownString(convertLink(contents))
-    return new NoteDescription(note, body, vscode.CommentMode.Preview)
+/**
+ * Converts a `Note` object into a `vscode.MarkdownString` formatted comment.
+ *
+ * @param note - The `Note` object to be converted.
+ * @param head - Optional. If `true`, includes a header in the comment. Default is `false`.
+ * @param tail - Optional. If `true`, includes a footer with a link in the comment. Default is `true`.
+ * @returns A `vscode.MarkdownString` containing the formatted comment.
+ *
+ * The function performs the following tasks:
+ * - Adds a header to the comment if `head` is `true`.
+ * - Appends the content of the `note` to the comment.
+ * - Adds a footer with a link to the comment if `tail` is `true` and `note.link` is provided.
+ *
+ * The function ensures that links are converted to absolute paths and formatted correctly for display in the comment.
+ */
+function convertNoteToComment(note: Note, head = false, tail = true): vscode.MarkdownString {
+  // comment controlller에서는 note의 링크가 표시되어지지 않기 때문에 이를 body에 추가해서 표시한다.
+  // 또한 note.content에서 지정한 문서들의 링크도 표시 문제로 절대 경로로 변경해서 저장해야 한다.
+  const result: string[] = []
+
+  if (head) {
+    result.push('// You can change the category of this note (Do not modify this comment)')
+    result.push('// category: ' + note.category)
+    result.push('//-------------------------------------------------------')
   }
 
-  /**
-   * Appends a link to the note's body if it exists and ensures that the link is in an absolute path format.
-   *
-   * This method performs the following steps:
-   * 1. Extracts any existing links from the note's body and removes them.
-   * 2. If the note has a link, it processes the link to ensure it is in an absolute path format.
-   * 3. Adds the processed link to the result array in a markdown format.
-   *
-   * @param note - The note object which may contain a link and body information.
-   * @returns A string representing the modified note body with the appended link.
-   */
-  private appendLinkToNoteContent(noteContent: string, noteLink: string | undefined): string {
-    // comment controlller에서는 note의 링크가 표시되어지지 않기 때문에 이를 body에 추가해서 표시한다.
-    // 또한 note.content에서 지정한 문서들의 링크도 표시 문제로 절대 경로로 변경해서 저장해야 한다.
-    const result: string[] = []
+  result.push(note.content)
 
-    // 필요없다고 생각하지만 note.content에 이미 변환된 내용이 있는지 확인하고 있으면 제거한다.
-    result.push(this.extractLinkFromNoteContent(noteContent))
-
-    // comment controller의 입력창에서 설정하는 링크는 이것이 비록 마크다운 형태로 처리되어도 `file:///절대경로` 만 인식한다.
-    if (noteLink) {
-      let root = PrismFileManager.getWorkspacePath()
-      const linkPath = noteLink.replace('file:///', '')
-      if (linkPath.startsWith('./')) {
-        // prism folder에서의 상대 경로인 경우...
-        // 이 링크가 prism file에 저장되어져 있기 때문에 여기서 현재 폴더는 prism folder이다.
-        root = PrismFileManager.getPrismFolderPath()
-      }
-
-      // string으로 저장할시에는 \를 /로 변경해야 한다. 그렇지 않으면 . 으로 시작하는 폴더가 상위 폴더와 분리가 되지 않는다.
-      const link = path.join(root, linkPath).replaceAll('\\', '/')
-
-      result.push('\n---')
-      result.push('_Modifing this section is useless!_')
-      result.push(`- [linked document - ${linkPath}](file:///${link})`)
+  // comment controller의 입력창에서 설정하는 링크는 이것이 비록 마크다운 형태로 처리되어도 `file:///절대경로` 만 인식한다.
+  if (tail && note.link) {
+    let root = PrismFileManager.getWorkspacePath()
+    const linkPath = note.link.replace('file:///', '')
+    if (linkPath.startsWith('./')) {
+      // prism folder에서의 상대 경로인 경우...
+      // 이 링크가 prism file에 저장되어져 있기 때문에 여기서 현재 폴더는 prism folder이다.
+      root = PrismFileManager.getPrismFolderPath()
     }
-    return result.join('\n')
+
+    // string으로 저장할시에는 \를 /로 변경해야 한다. 그렇지 않으면 . 으로 시작하는 폴더가 상위 폴더와 분리가 되지 않는다.
+    const link = path.join(root, linkPath).replaceAll('\\', '/')
+
+    result.push('\n---')
+    result.push(`- [linked document - ${linkPath}](file:///${link})`)
   }
 
-  /**
-   * Extracts the original content from a note's body by removing any appended
-   * link information. If the body contains a specific marker indicating the
-   * start of the appended link information, the method will return the content
-   * before this marker.
-   *
-   * @param note - The note object containing the body to be processed.
-   * @returns The original content of the note's body without the appended link information.
-   */
-  private extractLinkFromNoteContent(noteContent: string) {
-    // note.content에 이미 변환된 내용이 있는지 확인하고 있으면 제거한다.
-    // 이 기능은 note를 저장할 때만 사용된다.
-    let original = noteContent
-    const index = noteContent.indexOf('\n---\n_Modifing this section is useless!_\n- [linked document -')
-    if (index > 0) {
-      original = noteContent.slice(0, index).trim()
+  return new vscode.MarkdownString(convertLink(result.join('\n')))
+}
+
+/**
+ * Converts a comment body to a note object by removing specific headers and tails,
+ * and extracting the category and content.
+ *
+ * @param body - The comment body, which can be a string or a vscode.MarkdownString.
+ * @returns An object containing the category and the cleaned content of the note.
+ */
+function convertCommentToNote(body: string | vscode.MarkdownString) {
+  const content = typeof body === 'string' ? body : body.value
+  // note.content에서 자동으로 추가된 헤더와 테일을 제거한다.
+  // 이 기능은 note를 저장할 때만 사용된다.
+  let removedTail = content
+  const index = content.indexOf('\n---\n- [linked document -')
+  if (index > 0) {
+    removedTail = content.slice(0, index).trim()
+  }
+
+  const result: string[] = []
+  let category: string = ''
+  const split = removedTail.split('\n')
+  for (const line of split) {
+    if (line.startsWith('// category:')) {
+      category = line.slice('// category:'.length).trim()
     }
-    return original
+    if (line.startsWith('//')) continue
+    result.push(line)
+  }
+
+  return {
+    category,
+    contents: result.join('\n'),
   }
 }

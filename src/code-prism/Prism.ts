@@ -169,7 +169,7 @@ export class Prism {
    * The source file path is stored relative to the workspace root, which must start with a '/'.
    * The line and column numbers in the range are adjusted to be 1-based.
    */
-  appendIssueDetails(title: string, source: string, range: vscode.Range): Issue {
+  createIssueDetails(title: string, source: string, range: vscode.Range): Issue {
     const issue: Issue = {
       id: uuid(),
       title,
@@ -186,7 +186,6 @@ export class Prism {
       notes: [],
     }
 
-    this.appendIssue(issue)
     return issue
   }
 

@@ -83,6 +83,14 @@ The prism file and the document correspond one-to-one, and one prism file may co
 
 ## 🔗 Release Notes
 
+### 1.3.0 - November 6, 2024
+
+1. appended new commands about finding and searching(eg. Find All Reference, Open Search Editor, and so on) in DefinitionView.
+2. appended new PrismView's mode(Issue List Mode) and implemented sorting of tree item by name, category, created time.
+3. appended the method of modifying note's category(you can changed the category when you write the comment)
+4. improved some stuff of display and performance.
+5. bug fixes.
+
 ### 1.2.0 - November 3, 2024
 
 1. implement to cahnge issue's position
@@ -91,6 +99,7 @@ The prism file and the document correspond one-to-one, and one prism file may co
 
 ## 💚 Code Prism is base of 💚
 
+- [Comment Linker](https://marketplace.visualstudio.com/items?itemName=antunesdq.comment-linker)
 - [Docs View](https://marketplace.visualstudio.com/items?itemName=bierner.docs-view)
 - [Definition View](https://marketplace.visualstudio.com/items?itemName=stevepryde.definition-view)
 - [Code Explorer](https://marketplace.visualstudio.com/items?itemName=tianjianchn.code-explorer)

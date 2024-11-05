@@ -12,27 +12,30 @@ import { docdetector_activate } from './PrismDocDetector'
 import { output } from './PrismOutputChannel.js'
 
 /**
- * Activates the CodePrism extension by registering various commands and providers.
+ * Activates the Code Prism extension.
+ *
+ * This function initializes and registers various components and commands
+ * related to the Code Prism extension, including the Prism tree view, comment
+ * controller, and various commands for managing Prism files, issues, and notes.
  *
  * @param context - The extension context provided by VSCode.
- *
- * This function performs the following actions:
- * - Registers multiple commands related to Prism environment, files, notes, and drafts.
- * - Registers hover providers for TypeScript and Python files.
- * - Registers a document link provider and a hover provider for all file types.
- * - Registers a command to open a document link.
- * - Registers a CodeLens provider for all file types.
- * - Loads Prism files and refreshes the view.
  */
 export async function prism_activate(context: vscode.ExtensionContext) {
   /**
-   * An instance of `PrismProvider` used to manage and provide
-   * functionalities related to the Prism framework within the application.
+   * An instance of PrismTreeProvider which is responsible for providing
+   * the data and functionality required to manage and display the prism tree structure.
    */
   const prismTreeProvider = new PrismTreeProvider()
   //context.subscriptions.push(prismTreeProvider)
   prismTreeProvider.register()
 
+  /**
+   * Creates a TreeView for the CodePrism extension.
+   *
+   * @param {string} id - The identifier for the TreeView.
+   * @param {vscode.TreeDataProvider<PrismItem>} treeDataProvider - The data provider for the TreeView.
+   * @param {boolean} showCollapseAll - Whether to show the "Collapse All" button in the TreeView.
+   */
   const prismTreeView: vscode.TreeView<PrismItem> = vscode.window.createTreeView('CodePrism.view.prismView', {
     treeDataProvider: prismTreeProvider,
     showCollapseAll: true,
@@ -40,8 +43,8 @@ export async function prism_activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(prismTreeView)
 
   /**
-   * An instance of `PrismCommentController` responsible for handling comment-related operations
-   * within the Prism code documentation tool.
+   * Initializes a new instance of the `PrismCommentController` class.
+   * The `PrismCommentController` class is responsible for handling vscode.CommentController
    */
   const commentController = new PrismCommentController(context)
 
@@ -99,6 +102,11 @@ export async function prism_activate(context: vscode.ExtensionContext) {
   output.log('Code Prism is activating...')
   context.subscriptions.push(output)
 
+  // CodePrism.command.prismFile.show command는 다음의 두 가지 경우에만 발생한다.
+  // 1) PrismTreeView에서 PrismItem 자체를 클릭
+  // 2) PrismTreeView의 PrismItem의 context menu에서 show icon를 클릭
+  // 1)의 경우에는 command를 직접 호출하는 경우이므로 argument를 prism으로 할 수 있지만
+  // 2)의 경우에는 VS Code에 의해서 PrismItem이 전달되기 때문에 1)의 경우도 인수를 PrismItem으로 하여 동일하게 처리되게 하였다.
   context.subscriptions.push(
     vscode.commands.registerCommand('CodePrism.command.prismFile.show', (item: PrismItem) => {
       PrismViewer.showPrismViewer(item.prism)
@@ -144,6 +152,9 @@ export async function prism_activate(context: vscode.ExtensionContext) {
     })
   )
 
+  // CodePrism.command.issue.delete command는 다음의 두 가지 경우에서 발생할 수 있고 그래서 인수가 복잡하다.
+  // 1) PrismTreeView의 PrismItem의 context menu에서 delete icon를 클릭 : "view/item/context" 참고
+  // 2) Comment Controller의 thread context menu에서도 삭제할 수 있다 : "comments/commentThread/title" 참고
   context.subscriptions.push(
     vscode.commands.registerCommand(
       'CodePrism.command.issue.delete',
@@ -175,6 +186,8 @@ export async function prism_activate(context: vscode.ExtensionContext) {
     )
   )
 
+  // comment controller는 comment(note)를 추가할때 vscode.CommentReply를 전달한다.
+  // PrismTreeView는 note를 직접적으로 다루지 않기 때문에 note 관련 command는 모두 comment controller에서 발생한다.
   context.subscriptions.push(
     vscode.commands.registerCommand('CodePrism.command.note.add', (reply: vscode.CommentReply) => {
       commentController.addNote(reply)
@@ -230,6 +243,36 @@ export async function prism_activate(context: vscode.ExtensionContext) {
   )
 
   context.subscriptions.push(
+    vscode.commands.registerCommand('CodePrism.command.prismView.asTree', () => {
+      prismTreeProvider.refresh('tree', '')
+    })
+  )
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('CodePrism.command.prismView.asList', () => {
+      prismTreeProvider.refresh('list', '')
+    })
+  )
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('CodePrism.command.prismView.sortByName', () => {
+      prismTreeProvider.refresh('', 'name')
+    })
+  )
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('CodePrism.command.prismView.sortByCategory', () => {
+      prismTreeProvider.refresh('', 'cate')
+    })
+  )
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('CodePrism.command.prismView.sortByCreation', () => {
+      prismTreeProvider.refresh('', 'time')
+    })
+  )
+
+  context.subscriptions.push(
     vscode.commands.registerCommand('CodePrism.command.prismView.expandAll', async () => {
       const expandAllItems = async (item: TreeElement) => {
         await prismTreeView.reveal(item, { expand: true, focus: false, select: false })
@@ -253,17 +296,6 @@ export async function prism_activate(context: vscode.ExtensionContext) {
     })
   )
 
-  // for test
-  // context.subscriptions.push(
-  //   vscode.commands.registerCommand('CodePrism.command.showMarkdownPreviewToSide', (uri: string, option?: string) => {
-  //     console.log('CodePrism.command.showMarkdownPreviewToSide called:', uri, option)
-  //     vscode.commands.executeCommand('markdown.showPreviewToSide', vscode.Uri.file(uri))
-  //     // vscode.workspace.openTextDocument(vscode.Uri.file(uri)).then(document => {
-  //     //   vscode.window.showTextDocument(document, vscode.ViewColumn.Two)
-  //     // })
-  //   })
-  // )
-
   linkdetector_activate(context)
   output.log('activated link-detector')
 
@@ -275,36 +307,35 @@ export async function prism_activate(context: vscode.ExtensionContext) {
   commentController.reload(prisms)
   prismTreeProvider.reload(prisms)
 
-  // // 이 코드는 TextEditor에서 symbol을 클릭했을때 Reference Result View를 오픈하는 코드이다.
-  // // 이 뷰는 find all references, find all implementations, show call hierarchy 기능을 실행하면
-  // // 오픈되는 뷰로써 이 뷰는 빌드인되어진 extension의 기능이다.
-  // // Register the event listener for text editor selection change
-  // let disposable = vscode.window.onDidChangeTextEditorSelection((event: vscode.TextEditorSelectionChangeEvent) => {
-  //   const editor = event.textEditor
-  //   const selection = event.selections[0]
-  //   const text = editor.document.getText(selection)
-  //   // const position = editor.selection.active
-
-  //   // 명령 파레트에 표시되지 않은 명령들을 검색하고 표시하는 코드이다.
-  //   // const allCommands = vscode.commands.getCommands()
-  //   // vscode.window.showQuickPick(allCommands, { placeHolder: 'Select a command to execute' })
-
-  //   // Reference를 검색하고 표시하는 것으로 보이는 많은 명령들이 있다.
-  //   // 'openReference'
-  //   // 'openReferenceToSide'
-  //   // 'editor.action.showReferences'
-  //   // 'editor.action.findReferences'
-  //   // 'editor.action.referenceSearch.trigger'
-  //   // 'references-view.findReferences'
-  //   // 동작하는 명령은 'editor.action.referenceSearch.trigger', 'references-view.findReferences' 뿐이다.
-
-  //   // text, position 모두 가능하다.
-  //   vscode.commands.executeCommand('references-view.findReferences', text)
-  //   // vscode.commands.executeCommand('references-view.findImplementations', text)
-  //   // vscode.commands.executeCommand('references-view.showCallHierarchy', text)
-  // })
-
-  // context.subscriptions.push(disposable)
-
   output.log('activating is done')
+
+  // 나중에 테스트용으로 사용할 목적으로 남겨둔다.
+  // context.subscriptions.push(
+  //   vscode.commands.registerCommand('CodePrism.command.showMarkdownPreviewToSide', (uri: string, option?: string) => {
+  //     console.log('CodePrism.command.showMarkdownPreviewToSide called:', uri, option)
+  //     vscode.commands.executeCommand('markdown.showPreviewToSide', vscode.Uri.file(uri))
+  //     // vscode.workspace.openTextDocument(vscode.Uri.file(uri)).then(document => {
+  //     //   vscode.window.showTextDocument(document, vscode.ViewColumn.Two)
+  //     // })
+  //   })
+  // )
+  // context.subscriptions.push(
+  //   vscode.commands.registerCommand('CodePrism.command.showQuickPickExample', async () => {
+  //     const pickItems: vscode.QuickPickItem[] = [
+  //       { label: 'Option 1', description: 'This is option 1' },
+  //       { label: 'Option 2', description: 'This is option 2' },
+  //       { label: 'Option 3', description: 'This is option 3' },
+  //     ]
+
+  //     const selected = await vscode.window.showQuickPick(pickItems, {
+  //       placeHolder: 'Select an option',
+  //     })
+
+  //     if (selected) {
+  //       vscode.window.showInformationMessage(`You selected: ${selected.label}`)
+  //     } else {
+  //       vscode.window.showInformationMessage('No option selected')
+  //     }
+  //   })
+  // )
 }

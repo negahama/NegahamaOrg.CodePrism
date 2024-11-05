@@ -2,6 +2,34 @@ import * as vscode from 'vscode'
 import { DefinitionViewRenderer } from './DefinitionViewRenderer'
 
 /**
+ *
+ * @param context
+ */
+export function definition_activate(context: vscode.ExtensionContext) {
+  // extensionUri 속성은 확장 프로그램의 루트 디렉토리를 나타내는 URI입니다.
+  // 이 URI는 확장 프로그램이 설치된 위치를 가리키며,
+  // 확장 프로그램의 리소스 파일(예: HTML, CSS, JavaScript 파일 등)에 접근할 때 유용합니다
+  const definitionProvider = new DefinitionViewProvider(context.extensionUri)
+  context.subscriptions.push(definitionProvider)
+
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider(DefinitionViewProvider.viewType, definitionProvider)
+  )
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('CodePrism.command.definitionView.pin', () => {
+      definitionProvider.pin()
+    })
+  )
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('CodePrism.command.definitionView.unpin', () => {
+      definitionProvider.unpin()
+    })
+  )
+}
+
+/**
  * 이 클래스는 다음의 두가지 built-in command를 사용한다.
  * 이 클래스는 이들 기능을 이용해서 특정 심볼의 자세한 정보를 웹뷰에 표시하는 역할을 한다.
  * - vscode.executeHoverProvider
@@ -92,23 +120,6 @@ export class DefinitionViewProvider implements vscode.WebviewViewProvider {
       this._disposables
     )
 
-    // vscode.workspace.onDidChangeConfiguration(
-    //   () => {
-    //     this.updateConfiguration()
-    //   },
-    //   null,
-    //   this._disposables
-    // )
-
-    // this.renderer.needsRender(
-    //   () => {
-    //     this.update(/* force */ true)
-    //   },
-    //   undefined,
-    //   this._disposables
-    // )
-
-    // this.updateConfiguration()
     this.update()
   }
 
@@ -156,6 +167,22 @@ export class DefinitionViewProvider implements vscode.WebviewViewProvider {
       switch (message.command) {
         case 'alert':
           vscode.window.showErrorMessage(message.text)
+          break
+        case 'openFindAllReference':
+          // text, position 모두 가능하다.
+          vscode.commands.executeCommand('references-view.findReferences')
+          break
+        case 'openFindAllImplement':
+          vscode.commands.executeCommand('references-view.findImplementations')
+          break
+        case 'openShowCallHierarchy':
+          vscode.commands.executeCommand('references-view.showCallHierarchy')
+          break
+        case 'openFindInFiles':
+          vscode.commands.executeCommand('workbench.action.findInFiles')
+          break
+        case 'openSearchEditor':
+          vscode.commands.executeCommand('search.action.openEditor')
           break
       }
     })
@@ -212,6 +239,13 @@ export class DefinitionViewProvider implements vscode.WebviewViewProvider {
 				<title>Definition View</title>
 			</head>
 			<body>
+        <div id="menus"><ul>
+          <li><a href="#" id="openFindAllReference">Find All References</a></li>
+          <li><a href="#" id="openFindAllImplement">Find All Implementations</a></li>
+          <li><a href="#" id="openShowCallHierarchy">Show Call Hierarchy</a></li>
+          <li><a href="#" id="openFindInFiles">Open Find In Files</a></li>
+          <li><a href="#" id="openSearchEditor">Open Search Editor</a></li>
+        </ul></div>
 				<article id="main"></article>
 				<script nonce="${nonce}" src="${scriptUri}"></script>
         <script src="${prismJs}"></script>
@@ -432,11 +466,6 @@ export class DefinitionViewProvider implements vscode.WebviewViewProvider {
       return markdown.value
     }
   }
-
-  // private updateConfiguration() {
-  //   const config = vscode.workspace.getConfiguration('defView')
-  //   this._updateMode = config.get<UpdateMode>('definitionView.updateMode') || UpdateMode.Live
-  // }
 }
 
 /**
@@ -448,7 +477,7 @@ export class DefinitionViewProvider implements vscode.WebviewViewProvider {
  *
  * @returns {string} A randomly generated 32-character nonce string.
  */
-function getNonce() {
+function getNonce(): string {
   let text = ''
   const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
   for (let i = 0; i < 32; i++) {
@@ -519,30 +548,54 @@ function getNonce() {
 //   )
 // }
 
-/**
- *
- * @param context
- */
-export function definition_activate(context: vscode.ExtensionContext) {
-  // extensionUri 속성은 확장 프로그램의 루트 디렉토리를 나타내는 URI입니다.
-  // 이 URI는 확장 프로그램이 설치된 위치를 가리키며,
-  // 확장 프로그램의 리소스 파일(예: HTML, CSS, JavaScript 파일 등)에 접근할 때 유용합니다
-  const definitionProvider = new DefinitionViewProvider(context.extensionUri)
-  context.subscriptions.push(definitionProvider)
+// vscode.workspace.onDidChangeConfiguration(
+//   () => {
+//     this.updateConfiguration()
+//   },
+//   null,
+//   this._disposables
+// )
 
-  context.subscriptions.push(
-    vscode.window.registerWebviewViewProvider(DefinitionViewProvider.viewType, definitionProvider)
-  )
+// this.renderer.needsRender(
+//   () => {
+//     this.update(/* force */ true)
+//   },
+//   undefined,
+//   this._disposables
+// )
 
-  context.subscriptions.push(
-    vscode.commands.registerCommand('CodePrism.command.definitionView.pin', () => {
-      definitionProvider.pin()
-    })
-  )
+// private updateConfiguration() {
+//   const config = vscode.workspace.getConfiguration('defView')
+//   this._updateMode = config.get<UpdateMode>('definitionView.updateMode') || UpdateMode.Live
+// }
 
-  context.subscriptions.push(
-    vscode.commands.registerCommand('CodePrism.command.definitionView.unpin', () => {
-      definitionProvider.unpin()
-    })
-  )
-}
+// // 이 코드는 TextEditor에서 symbol을 클릭했을때 Reference Result View를 오픈하는 코드이다.
+// // 이 뷰는 find all references, find all implementations, show call hierarchy 기능을 실행하면
+// // 오픈되는 뷰로써 이 뷰는 빌드인되어진 extension의 기능이다.
+// // Register the event listener for text editor selection change
+// let disposable = vscode.window.onDidChangeTextEditorSelection((event: vscode.TextEditorSelectionChangeEvent) => {
+//   const editor = event.textEditor
+//   const selection = event.selections[0]
+//   const text = editor.document.getText(selection)
+//   // const position = editor.selection.active
+
+//   // 명령 팔레트에 표시되지 않은 명령들을 검색하고 표시하는 코드이다.
+//   // const allCommands = vscode.commands.getCommands()
+//   // vscode.window.showQuickPick(allCommands, { placeHolder: 'Select a command to execute' })
+
+//   // Reference를 검색하고 표시하는 것으로 보이는 많은 명령들이 있다.
+//   // 'openReference'
+//   // 'openReferenceToSide'
+//   // 'editor.action.showReferences'
+//   // 'editor.action.findReferences'
+//   // 'editor.action.referenceSearch.trigger'
+//   // 'references-view.findReferences'
+//   // 동작하는 명령은 'editor.action.referenceSearch.trigger', 'references-view.findReferences' 뿐이다.
+
+//   // text, position 모두 가능하다.
+//   vscode.commands.executeCommand('references-view.findReferences', text)
+//   // vscode.commands.executeCommand('references-view.findImplementations', text)
+//   // vscode.commands.executeCommand('references-view.showCallHierarchy', text)
+// })
+
+// context.subscriptions.push(disposable)

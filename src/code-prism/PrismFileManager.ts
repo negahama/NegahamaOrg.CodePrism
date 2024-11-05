@@ -131,6 +131,37 @@ export class PrismFileManager {
   }
 
   /**
+   * Retrieves the names of all prism files in the prism folder.
+   *
+   * This method first checks if the prism folder exists. If it does not exist,
+   * it returns an empty array. If the folder exists, it searches for all files
+   * with the `.prism.json` extension within the folder and returns their paths.
+   *
+   * @returns {Promise<string[]>} A promise that resolves to an array of file paths
+   * of the prism files.
+   */
+  static async getPrismFileNames(): Promise<string[]> {
+    if (!PrismFileManager.isPrismFolderExists()) {
+      return []
+    }
+
+    // const prismFolderPath = this.getPrismFolderPath()
+    // // const result: string[] = []
+    // // fs.readdirSync(prismFolderPath).forEach(file => {
+    // //   const filePath = path.resolve(prismFolderPath, file)
+    // //   const stats = fs.statSync(filePath)
+    // //   if (stats.isFile()) {
+    // //     result.push(filePath)
+    // //   }
+    // // })
+    // return fs.readdirSync(prismFolderPath).filter(name => name.endsWith(PRISM_FILE_EXT))
+
+    let folderName = PrismFileManager.getPrismFolderName()
+    let files = await vscode.workspace.findFiles(`**/${folderName}/*.prism.json`, null, 500)
+    return files.map(file => file.fsPath)
+  }
+
+  /**
    * Computes the relative path from the workspace path to the given file path.
    *
    * @param filePath - The absolute path of the file.
@@ -187,7 +218,6 @@ export class PrismFileManager {
 
   /**
    * Saves the given Prism object to a file.
-   * 이것은 this.prisms를 변경하지 않기 때문에 내부적으로만 사용한다.
    *
    * @param prism - The Prism object to be saved.
    * @remarks
@@ -237,7 +267,7 @@ export class PrismFileManager {
     // 소스 파일의 경로는 workspace root 기준 경로이고 마크다운의 특성상 workspace 경로는 '/'가 필요한데
     // 이미 그렇게 되어져 있기 때문에 그냥 사용하면 된다.
 
-    // 이 markdown 자체가 note와 관련이 있기 때문에 markdown title을 note의 context로 한다.
+    // 이 markdown 자체가 note와 관련이 있기 때문에 markdown title을 note의 content로 한다.
     let title = 'untitled'
     issue.notes.forEach(note => {
       if (note.content) {

@@ -2,7 +2,7 @@
   "name": "codeprism",
   "displayName": "CodePrism",
   "description": "Source code analysis tool",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "publisher": "NegahamaOrg",
   "author": "Samuel Kang",
   "homepage": "https://github.com/negahama/NegahamaOrg.CodePrism",
@@ -117,6 +117,36 @@
         "command": "CodePrism.command.prismView.reload",
         "title": "Reload",
         "icon": "$(refresh)"
+      },
+      {
+        "category": "Code Prism",
+        "command": "CodePrism.command.prismView.asTree",
+        "title": "View as Tree",
+        "icon": "$(list-tree)"
+      },
+      {
+        "category": "Code Prism",
+        "command": "CodePrism.command.prismView.asList",
+        "title": "View as List",
+        "icon": "$(list-flat)"
+      },
+      {
+        "category": "Code Prism",
+        "command": "CodePrism.command.prismView.sortByName",
+        "title": "Sort by Name",
+        "icon": "$(list-ordered)"
+      },
+      {
+        "category": "Code Prism",
+        "command": "CodePrism.command.prismView.sortByCategory",
+        "title": "Sort by Category",
+        "icon": "$(ruby)"
+      },
+      {
+        "category": "Code Prism",
+        "command": "CodePrism.command.prismView.sortByCreation",
+        "title": "Sort by Created time",
+        "icon": "$(watch)"
       },
       {
         "category": "Code Prism",
@@ -253,6 +283,26 @@
           "when": "false"
         },
         {
+          "command": "CodePrism.command.prismView.asTree",
+          "when": "false"
+        },
+        {
+          "command": "CodePrism.command.prismView.asList",
+          "when": "false"
+        },
+        {
+          "command": "CodePrism.command.prismView.sortByName",
+          "when": "false"
+        },
+        {
+          "command": "CodePrism.command.prismView.sortByCategory",
+          "when": "false"
+        },
+        {
+          "command": "CodePrism.command.prismView.sortByCreation",
+          "when": "false"
+        },
+        {
           "command": "CodePrism.command.prismView.expandAll",
           "when": "false"
         },
@@ -272,9 +322,34 @@
           "group": "navigation@1"
         },
         {
+          "command": "CodePrism.command.prismView.asTree",
+          "when": "view == CodePrism.view.prismView && CodePrism.context.prismView.isList",
+          "group": "navigation@2"
+        },
+        {
+          "command": "CodePrism.command.prismView.asList",
+          "when": "view == CodePrism.view.prismView && !CodePrism.context.prismView.isList",
+          "group": "navigation@2"
+        },
+        {
+          "command": "CodePrism.command.prismView.sortByName",
+          "when": "view == CodePrism.view.prismView && !CodePrism.context.prismView.isList",
+          "group": "navigation@3"
+        },
+        {
+          "command": "CodePrism.command.prismView.sortByCategory",
+          "when": "view == CodePrism.view.prismView && CodePrism.context.prismView.isList",
+          "group": "navigation@3"
+        },
+        {
+          "command": "CodePrism.command.prismView.sortByCreation",
+          "when": "view == CodePrism.view.prismView && CodePrism.context.prismView.isList",
+          "group": "navigation@3"
+        },
+        {
           "command": "CodePrism.command.prismView.expandAll",
           "when": "view == CodePrism.view.prismView",
-          "group": "navigation@2"
+          "group": "navigation@4"
         },
         {
           "command": "CodePrism.command.definitionView.pin",
