@@ -83,6 +83,10 @@ The prism file and the document correspond one-to-one, and one prism file may co
 
 ## 🔗 Release Notes
 
+### 1.3.1 - November 6, 2024
+
+changed icon color and tooltip content of prism tree view and bug fix.
+
 ### 1.3.0 - November 6, 2024
 
 1. appended new commands about finding and searching(eg. Find All Reference, Open Search Editor, and so on) in DefinitionView.

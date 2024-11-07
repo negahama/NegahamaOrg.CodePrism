@@ -309,7 +309,7 @@ export class PrismCommentController {
     }
 
     title = '`' + title.trim() + '`'
-    title += ` in ${PrismFileManager.getRelativePath(uri.fsPath)}#${range.start.line + 1}`
+    title += ` at ${PrismFileManager.getRelativePath(uri.fsPath)}#${range.start.line + 1}`
     title = title.trim()
 
     // prism이 없으면 새로 만든다.
@@ -833,7 +833,7 @@ export class PrismCommentController {
       await vscode.workspace.openTextDocument(thread.uri).then(doc => {
         const range = doc.lineAt(thread.range.start.line).range
         title = '`' + doc.getText(range).trim() + '`'
-        title += ` in ${PrismFileManager.getRelativePath(thread.uri.fsPath)}#${thread.range.start.line + 1}`
+        title += ` at ${PrismFileManager.getRelativePath(thread.uri.fsPath)}#${thread.range.start.line + 1}`
       })
     }
     if (!title) {
@@ -908,7 +908,9 @@ function convertNoteToComment(note: Note, head = false, tail = true): vscode.Mar
   const result: string[] = []
 
   if (head) {
-    result.push('// You can change the category of this note (Do not modify this comment)')
+    result.push(
+      '// *By editing the line right below, You can change the category of this note (Do not modify this comment)*'
+    )
     result.push('// category: ' + note.category)
     result.push('//-------------------------------------------------------')
   }

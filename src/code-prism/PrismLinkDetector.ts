@@ -130,7 +130,7 @@ export async function linkdetector_activate(context: vscode.ExtensionContext) {
   // Create a TextEditorDecorationType that underlines text and changes its color
   const linkDecoration = vscode.window.createTextEditorDecorationType({
     textDecoration: 'underline',
-    color: '#61AFEF',
+    color: '#e5e51a',
   })
 
   /**

@@ -2,6 +2,10 @@
 
 All notable changes to the "Code Prism" extension will be documented in this file.
 
+### 1.3.1 - November 6, 2024
+
+changed icon color and tooltip content of prism tree view and bug fix.
+
 ### 1.3.0 - November 6, 2024
 
 1. appended new commands about finding and searching(eg. Find All Reference, Open Search Editor, and so on) in DefinitionView.

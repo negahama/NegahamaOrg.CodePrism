@@ -1,4 +1,5 @@
 import * as vscode from 'vscode'
+import assert from 'assert'
 
 import { Prism, Issue } from './Prism'
 import { PrismManager, SubscribeType } from './PrismManager'
@@ -17,16 +18,33 @@ export class PrismItem extends vscode.TreeItem {
    */
   constructor(public readonly prism: Prism) {
     super(prism.name, vscode.TreeItemCollapsibleState.Collapsed)
+
     this.tooltip = prism.name
-    this.iconPath = new vscode.ThemeIcon('file-code')
+    this.iconPath = new vscode.ThemeIcon('file-code', new vscode.ThemeColor('terminal.ansiGreen'))
+    this.description = PrismItem.getDescription(prism)
+
     // contextValue는 'contributes/menus/view/item/context'에서 prismFile.delete, issue.delete 명령을 구분하기 위해서 사용한다.
     this.contextValue = 'PrismItem'
+
     // arguments로 [this]를 전달하는 이유는 [prismFile.show 명령 등록](./PrismCommands.ts#105-110)하는 부분을 참조한다.
     this.command = {
       command: 'CodePrism.command.prismFile.show',
       title: 'Open',
       arguments: [this],
     }
+  }
+
+  /**
+   * Returns a description of the given prism object, indicating the number of issues it has.
+   *
+   * @param prism - The prism object for which the description is generated.
+   * @returns A string describing the number of issues the prism has.
+   */
+  static getDescription(prism: Prism) {
+    return 'has ' + prism.getIssuesCount().toString() + ' issues'
+  }
+  static updateDescription(item: PrismItem) {
+    item.description = this.getDescription(item.prism)
   }
 }
 
@@ -50,24 +68,30 @@ export class IssueItem extends vscode.TreeItem {
    * The command executed is 'CodePrism.command.prismFile.show' with the current instance as an argument.
    */
   constructor(public readonly prism: Prism, public readonly issue: Issue, public readonly parent?: PrismItem) {
-    // 표시되어질 label은 issue의 title이 아니라 issue의 첫번째 description context이다.
-    let label: vscode.TreeItemLabel = { label: issue.title }
-    if (issue.notes && issue.notes.length > 0) {
-      label = {
-        label: `${issue.notes[0].category} ▷ ${issue.notes[0].content}`,
-        highlights: [[0, issue.notes[0].category.length]],
-      }
+    const note = issue.notes && issue.notes.length > 0 ? issue.notes[0] : undefined
+    assert.ok(note, 'Issue must have at least one note')
+
+    // 표시되어질 label은 issue의 title이 아니라 issue의 첫번째 note's content이다.
+    const label: vscode.TreeItemLabel = {
+      label: `${note.category} ▷ ${note.content}`,
+      highlights: [[0, note.category.length]],
     }
+
     // IssueItem은 자식을 가지지 않으므로 vscode.TreeItemCollapsibleState.None을 사용한다.
     super(label, vscode.TreeItemCollapsibleState.None)
-    // tooltip은 issue의 title을 사용한다.
+
+    // tooltip은 issue의 title(즉 marking된 부분의 코드와 파일명)을 사용하며
+    // 아울러 note content가 길어서 모두 표시되지 않는 경우를 위해 content도 표시한다.
     const tooltip = new vscode.MarkdownString('$(code) ', true)
-    tooltip.appendMarkdown(issue.title)
+    tooltip.appendMarkdown(issue.title + '\n\n---\n$(comment) ' + note.content)
     this.tooltip = tooltip
+
     // icon은 commentController와 동일하게 하기 위해 comment icon을 사용한다.
-    this.iconPath = new vscode.ThemeIcon('comment')
+    this.iconPath = new vscode.ThemeIcon('comment', new vscode.ThemeColor('terminal.ansiYellow'))
+
     // contextValue는 'contributes/menus/view/item/context'에서 prismFile.delete, issue.delete 명령을 구분하기 위해서 사용한다.
     this.contextValue = 'IssueItem'
+
     // PrismItem과 마찬가지 이유로 arguments로 [this]를 전달하는데 IssueItem은 issue의 값을 참조할 수 있어야 한다.
     this.command = {
       command: 'CodePrism.command.issue.goto',
@@ -92,9 +116,8 @@ export type TreeElement = PrismItem | IssueItem
  */
 export class PrismTreeProvider implements vscode.TreeDataProvider<TreeElement> {
   /**
-   * An array of `PrismItem` objects.
-   * This array is used to store items related to the Prism functionality.
-   * It is initialized as an empty array.
+   * An array of TreeElement objects representing the items in the tree.
+   * This array is initially empty and can be populated with TreeElement instances.
    */
   private items: TreeElement[] = []
 
@@ -153,9 +176,12 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<TreeElement> {
    * @returns A promise that resolves to an array of `PrismFile` objects representing the child elements.
    */
   getChildren(element?: TreeElement): Thenable<TreeElement[]> {
-    if (this.viewMode === 'tree') {
-      if (element === undefined) {
-        return Promise.resolve(this.items)
+    if (!element) {
+      return Promise.resolve(this.items)
+    } else {
+      if (this.viewMode === 'list') {
+        // list view mode는 children이 없다.
+        return Promise.resolve([])
       } else {
         if (element instanceof PrismItem) {
           if (element.prism.issues === undefined) {
@@ -166,12 +192,6 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<TreeElement> {
         } else {
           return Promise.resolve([])
         }
-      }
-    } else {
-      if (element === undefined) {
-        return Promise.resolve(this.items)
-      } else {
-        return Promise.resolve([])
       }
     }
   }
@@ -190,15 +210,18 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<TreeElement> {
    * - `this.sortByCate` for 'cate'
    * - `this.sortByTime` for 'time'
    */
-  private sortItems(sort: string) {
+  private sortTreeElements(sort: string) {
     switch (sort) {
       case 'name': {
         this.items = this.items.sort((a, b) => {
-          if (this.sortByName === 'asc') {
-            return a.prism.name.localeCompare(b.prism.name)
-          } else {
-            return b.prism.name.localeCompare(a.prism.name)
+          if (a instanceof PrismItem && b instanceof PrismItem) {
+            if (this.sortByName === 'asc') {
+              return a.prism.name.localeCompare(b.prism.name)
+            } else {
+              return b.prism.name.localeCompare(a.prism.name)
+            }
           }
+          return 0
         })
         break
       }
@@ -208,8 +231,8 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<TreeElement> {
             return 0
           }
 
-          const ac = a.issue.notes[0].category
-          const bc = b.issue.notes[0].category
+          const ac = a.issue.notes.length > 0 ? a.issue.notes[0].category : ''
+          const bc = b.issue.notes.length > 0 ? b.issue.notes[0].category : ''
           if (this.sortByCate === 'asc') {
             return ac.localeCompare(bc)
           } else {
@@ -224,8 +247,8 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<TreeElement> {
             return 0
           }
 
-          const ac = a.issue.notes[0].createdAt
-          const bc = b.issue.notes[0].createdAt
+          const ac = a.issue.notes.length > 0 ? a.issue.notes[0].createdAt : ''
+          const bc = b.issue.notes.length > 0 ? b.issue.notes[0].createdAt : ''
           if (this.sortByTime === 'asc') {
             return ac.localeCompare(bc)
           } else {
@@ -270,31 +293,30 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<TreeElement> {
       this.refreshPrismView()
 
       // this.refreshPrismView()만으로는 refresh가 되지 않는 경우가 있다.
+      // 이 경우 이미 가지고 있는 prism 정보를 이용해서 tree view를 새로 설정한다.
       if (this.viewMode === 'tree') {
-        const debug = this.items.find(item => item.prism === data.prism)
-        if (!debug) {
-          console.warn('append-issue: item.prism !== data.prism')
-          this.items = []
-          const prisms = PrismManager.getAllPrisms()
-          prisms.forEach(p => {
-            this.appendPrismItem(p)
-          })
-          this.refreshPrismView()
+        assert.ok(data.prism)
+
+        // Issue를 추가하려고 하는데 이를 담을 PrismItem이 없는 경우
+        const prismItem = this.items.find(item => item instanceof PrismItem && item.prism === data.prism)
+        if (!prismItem) {
+          console.warn('append-issue: No exist data.prism')
+          this.reload()
+        } else {
+          // issue가 추가, 삭제되면 PrismItem의 `has # issues`메시지도 갱신되어야 한다.
+          PrismItem.updateDescription(prismItem)
+          this.refreshPrismView(prismItem)
         }
       } else {
-        const debug = this.items.find(
-          item => item.prism === data.prism && item instanceof IssueItem && item.issue === data.issue
-        )
-        if (!debug) {
-          console.warn('append-issue: item.prism !== data.prism || item.issue !== data.issue')
-          this.items = []
-          const prisms = PrismManager.getAllPrisms()
-          prisms.forEach(p => {
-            p.getIssues().forEach(issue => {
-              this.appendIssueItem(p, issue)
-            })
-          })
-          this.refreshPrismView()
+        assert.ok(data.prism)
+        assert.ok(data.issue)
+
+        // Issue를 추가하려고 하는데 이미 동일한 IssueItem이 있는 경우
+        const debug = this.items.find(item => item instanceof IssueItem && item.issue === data.issue)
+        if (debug) {
+          console.warn('append-issue: item.prism === data.prism :', debug.prism === data.prism)
+          console.warn('append-issue: item.issue === data.issue')
+          this.reload()
         }
       }
     })
@@ -307,36 +329,29 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<TreeElement> {
       // refresh가 될 수 있을 것 같은데 그렇지 않았다. cache되어진 것을 사용하지는 정확히는 모르겠지만 변경된 것과
       // item이 가지고 있는 prism이 다른 경우가 있다.
       if (this.viewMode === 'tree') {
-        const debug = this.items.find(item => item.prism === data.prism)
-        if (!debug) {
-          console.warn('remove-issue: item.prism !== data.prism')
-          this.items = []
-          const prisms = PrismManager.getAllPrisms()
-          prisms.forEach(p => {
-            this.appendPrismItem(p)
-          })
-          this.refreshPrismView()
+        assert.ok(data.prism)
+        const prismItem = this.items.find(item => item instanceof PrismItem && item.prism === data.prism)
+        if (!prismItem) {
+          console.warn('remove-issue: No exist data.prism')
+          this.reload()
+        } else {
+          // issue가 추가, 삭제되면 PrismItem의 `has # issues`메시지도 갱신되어야 한다.
+          PrismItem.updateDescription(prismItem)
+          this.refreshPrismView(prismItem)
         }
       } else {
+        assert.ok(data.prism)
+        assert.ok(data.issue)
+
         // this.items 자체가 IssueItem이기 때문에 tree인 경우와는 다르게 item 내부의 변화가 없다.
         // 따라서 this.refreshPrismView()로 전혀 갱신되지 않는다. 직접 삭제해 주어야 한다.
-        const debug = this.items.find(
-          item => item.prism === data.prism && item instanceof IssueItem && item.issue === data.issue
-        )
-        console.log('remove-issue', debug)
+        // 이미 없는 경우도 확인한다.
+        const debug = this.items.find(item => item instanceof IssueItem && item.issue === data.issue)
         if (!debug) {
-          console.warn('remove-issue: item.prism !== data.prism || item.issue !== data.issue')
-          this.items = []
-          const prisms = PrismManager.getAllPrisms()
-          prisms.forEach(p => {
-            p.getIssues().forEach(issue => {
-              this.appendIssueItem(p, issue)
-            })
-          })
+          console.warn('remove-issue: No exist data.issue')
+          this.reload()
         } else {
-          this.items = this.items.filter(
-            item => !(item instanceof IssueItem && item.prism === data.prism && item.issue === data.issue)
-          )
+          this.deleteIssueItem(data.prism, data.issue)
         }
         this.refreshPrismView()
       }
@@ -356,14 +371,22 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<TreeElement> {
    * prism files if the prism folder exists. After loading the prism files,
    * it appends each prism to the items list and refreshes the prism view.
    */
-  async reload(prisms?: Prism[]) {
+  reload(prisms?: Prism[]) {
     this.items = []
     if (!prisms) {
-      prisms = await PrismManager.loadPrismFiles()
+      prisms = PrismManager.getAllPrisms()
     }
-    prisms.forEach(p => {
-      this.appendPrismItem(p)
-    })
+    if (this.viewMode === 'tree') {
+      prisms.forEach(p => {
+        this.appendPrismItem(p)
+      })
+    } else {
+      prisms.forEach(p => {
+        p.getIssues().forEach(issue => {
+          this.appendIssueItem(p, issue)
+        })
+      })
+    }
     this.refreshPrismView()
   }
 
@@ -382,25 +405,12 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<TreeElement> {
   async refresh(view: string, sort: string) {
     if (view && view !== this.viewMode) {
       this.viewMode = view
-      this.items = []
-      const prisms = await PrismManager.loadPrismFiles()
-      if (view === 'tree') {
-        prisms.forEach(p => {
-          this.appendPrismItem(p)
-        })
-      } else {
-        prisms.forEach(p => {
-          p.getIssues().forEach(issue => {
-            this.appendIssueItem(p, issue)
-          })
-        })
-      }
-
+      this.reload(await PrismManager.loadPrismFiles())
       vscode.commands.executeCommand('setContext', 'CodePrism.context.prismView.isList', view === 'list')
     }
 
     if (sort) {
-      this.sortItems(sort)
+      this.sortTreeElements(sort)
       switch (sort) {
         case 'name':
           this.sortByName = this.sortByName === 'asc' ? 'desc' : 'asc'

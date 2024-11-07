@@ -237,8 +237,9 @@ export async function prism_activate(context: vscode.ExtensionContext) {
   )
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('CodePrism.command.prismView.reload', () => {
-      prismTreeProvider.reload()
+    vscode.commands.registerCommand('CodePrism.command.prismView.reload', async () => {
+      const prisms = await PrismManager.loadPrismFiles()
+      prismTreeProvider.reload(prisms)
     })
   )
 
@@ -309,11 +310,13 @@ export async function prism_activate(context: vscode.ExtensionContext) {
 
   output.log('activating is done')
 
-  // 나중에 테스트용으로 사용할 목적으로 남겨둔다.
+  // vscode.commands.executeCommand('CodePrism.command.test')
+  // // 나중에 테스트용으로 사용할 목적으로 남겨둔다.
   // context.subscriptions.push(
-  //   vscode.commands.registerCommand('CodePrism.command.showMarkdownPreviewToSide', (uri: string, option?: string) => {
-  //     console.log('CodePrism.command.showMarkdownPreviewToSide called:', uri, option)
-  //     vscode.commands.executeCommand('markdown.showPreviewToSide', vscode.Uri.file(uri))
+  //   vscode.commands.registerCommand('CodePrism.command.test', () => {
+  //     console.log('CodePrism.command.test called:')
+  //     vscode.commands.executeCommand('workbench.action.addComment')
+  //     // vscode.commands.executeCommand('markdown.showPreviewToSide', vscode.Uri.file(uri))
   //     // vscode.workspace.openTextDocument(vscode.Uri.file(uri)).then(document => {
   //     //   vscode.window.showTextDocument(document, vscode.ViewColumn.Two)
   //     // })

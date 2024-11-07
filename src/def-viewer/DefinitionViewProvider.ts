@@ -13,7 +13,7 @@ export function definition_activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(definitionProvider)
 
   context.subscriptions.push(
-    vscode.window.registerWebviewViewProvider(DefinitionViewProvider.viewType, definitionProvider)
+    vscode.window.registerWebviewViewProvider('CodePrism.view.definitionView', definitionProvider)
   )
 
   context.subscriptions.push(
@@ -54,13 +54,11 @@ export function definition_activate(context: vscode.ExtensionContext) {
  * @example
  * ```typescript
  * const provider = new DefinitionViewProvider(extensionUri);
- * vscode.window.registerWebviewViewProvider(DefinitionViewProvider.viewType, provider);
+ * vscode.window.registerWebviewViewProvider('CodePrism.view.definitionView', provider);
  * ```
  *
  * @param extensionUri - The URI of the extension's root directory.
  *
- * @property viewType - The unique identifier for the comment view.
- * @property pinnedContext - The context key used to track the pinned state of the view.
  * @property view - The current webview view instance.
  * @property loading - The current loading state, including a cancellation token source.
  * @property pinned - Indicates whether the view is pinned.
@@ -77,9 +75,6 @@ export function definition_activate(context: vscode.ExtensionContext) {
  * @method getMarkdown - Converts a MarkedString or MarkdownString to a string.
  */
 export class DefinitionViewProvider implements vscode.WebviewViewProvider {
-  public static readonly viewType = 'CodePrism.view.definitionView'
-  public static readonly pinnedContext = 'CodePrism.context.definitionView.isPinned'
-
   private view?: vscode.WebviewView
   private loading?: { cts: vscode.CancellationTokenSource }
   private pinned = false
@@ -87,8 +82,8 @@ export class DefinitionViewProvider implements vscode.WebviewViewProvider {
   private readonly _disposables: vscode.Disposable[] = []
 
   private readonly renderer = new DefinitionViewRenderer()
-  // private _currentCacheKey: CacheKey = cacheKeyNone
-  // private _updateMode = UpdateMode.Live
+
+  private currCacheKey: CacheKey = CacheKey.createCacheKey(undefined)
 
   /**
    * Creates an instance of DefinitionViewProvider.
@@ -190,7 +185,7 @@ export class DefinitionViewProvider implements vscode.WebviewViewProvider {
     // 웹뷰의 가시성 상태 변경 핸들러 추가
     webviewView.onDidChangeVisibility(() => {
       if (this.view?.visible) {
-        this.update(/* force */ true)
+        this.update(true)
       }
     })
 
@@ -200,7 +195,7 @@ export class DefinitionViewProvider implements vscode.WebviewViewProvider {
     })
 
     this.updateTitle()
-    this.update(/* force */ true)
+    this.update(true)
   }
 
   /**
@@ -219,6 +214,24 @@ export class DefinitionViewProvider implements vscode.WebviewViewProvider {
     const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'assets', 'main.css'))
     const prismJs = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'assets', 'prism.js'))
     const prismCss = webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'assets', 'prism.css'))
+
+    /**
+     * Generates a random nonce string.
+     *
+     * The nonce is a 32-character string consisting of uppercase letters,
+     * lowercase letters, and digits. This can be used for security purposes
+     * such as Content Security Policy (CSP) to prevent certain types of attacks.
+     *
+     * @returns {string} A randomly generated 32-character nonce string.
+     */
+    const getNonce = (): string => {
+      let text = ''
+      const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+      for (let i = 0; i < 32; i++) {
+        text += possible.charAt(Math.floor(Math.random() * possible.length))
+      }
+      return text
+    }
 
     const nonce = getNonce()
 
@@ -275,7 +288,7 @@ export class DefinitionViewProvider implements vscode.WebviewViewProvider {
    * @param value - The new pinned state to set. If the current pinned state is the same as the provided value, the method returns early.
    *
    * @remarks
-   * This method updates the `pinned` property and sets the context for the `DefinitionViewProvider.pinnedContext` command.
+   * This method updates the `pinned` property and sets the context for the `CodePrism.context.definitionView.isPinned` command.
    * It also triggers an update of the view.
    */
   private updatePin(value: boolean) {
@@ -284,7 +297,7 @@ export class DefinitionViewProvider implements vscode.WebviewViewProvider {
     }
 
     this.pinned = value
-    vscode.commands.executeCommand('setContext', DefinitionViewProvider.pinnedContext, value)
+    vscode.commands.executeCommand('setContext', 'CodePrism.context.definitionView.isPinned', value)
 
     this.update()
   }
@@ -321,12 +334,12 @@ export class DefinitionViewProvider implements vscode.WebviewViewProvider {
       return
     }
 
-    // const newCacheKey = createCacheKey(vscode.window.activeTextEditor)
-    // if (!ignoreCache && cacheKeyEquals(this._currentCacheKey, newCacheKey)) {
-    //   return
-    // }
+    const newCacheKey = CacheKey.createCacheKey(vscode.window.activeTextEditor)
+    if (!ignoreCache && this.currCacheKey.equals(newCacheKey)) {
+      return
+    }
 
-    // this._currentCacheKey = newCacheKey
+    this.currCacheKey = newCacheKey
 
     if (this.loading) {
       this.loading.cts.cancel()
@@ -348,19 +361,12 @@ export class DefinitionViewProvider implements vscode.WebviewViewProvider {
       }
       this.loading = undefined
 
-      if (html.length) {
-        this.view?.webview.postMessage({
-          type: 'update',
-          body: html,
-          // updateMode: this._updateMode,
-        })
-      } else {
-        this.view?.webview.postMessage({
-          type: 'noContent',
-          body: 'No symbol found at current cursor position',
-          // updateMode: this._updateMode,
-        })
+      let body = html
+      if (!html.length) {
+        body = '<p class="no-content">No symbol found at current cursor position</p>'
       }
+
+      this.view?.webview.postMessage({ body })
     })()
 
     await Promise.race([
@@ -372,7 +378,7 @@ export class DefinitionViewProvider implements vscode.WebviewViewProvider {
           return
         }
         return vscode.window.withProgress(
-          { location: { viewId: DefinitionViewProvider.viewType } },
+          { location: { viewId: 'CodePrism.view.definitionView' } },
           () => updatePromise
         )
       }),
@@ -402,6 +408,9 @@ export class DefinitionViewProvider implements vscode.WebviewViewProvider {
     if (!editor) {
       return ''
     }
+
+    const wordRange = editor.document.getWordRangeAtPosition(editor.selection.active)
+    const symbol = editor.document.getText(wordRange)
 
     try {
       const hovers = await vscode.commands.executeCommand<vscode.Hover[]>(
@@ -439,7 +448,7 @@ export class DefinitionViewProvider implements vscode.WebviewViewProvider {
 
       return this.renderer.render(markdown)
     } catch (error) {
-      vscode.window.showErrorMessage(`정의 찾기 오류: ${error}`)
+      vscode.window.showErrorMessage(`Error when finding definition of ${symbol}: ${error}`)
       console.error(error)
     }
     return ''
@@ -469,105 +478,63 @@ export class DefinitionViewProvider implements vscode.WebviewViewProvider {
 }
 
 /**
- * Generates a random nonce string.
- *
- * The nonce is a 32-character string consisting of uppercase letters,
- * lowercase letters, and digits. This can be used for security purposes
- * such as Content Security Policy (CSP) to prevent certain types of attacks.
- *
- * @returns {string} A randomly generated 32-character nonce string.
+ * Represents a unique key for caching purposes, based on a URI, version, and word range.
  */
-function getNonce(): string {
-  let text = ''
-  const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-  for (let i = 0; i < 32; i++) {
-    text += possible.charAt(Math.floor(Math.random() * possible.length))
+class CacheKey {
+  /**
+   * Constructs a new CacheKey instance.
+   * @param uri - The URI associated with the cache key.
+   * @param version - The version number associated with the cache key.
+   * @param wordRange - The range of the word associated with the cache key, or undefined if not applicable.
+   */
+  constructor(
+    public readonly uri: vscode.Uri,
+    public readonly version: number,
+    public readonly wordRange: vscode.Range | undefined
+  ) {}
+
+  /**
+   * Determines whether this CacheKey is equal to another CacheKey.
+   * @param other - The other CacheKey to compare with.
+   * @returns True if the CacheKeys are equal, false otherwise.
+   */
+  public equals(other: CacheKey): boolean {
+    if (this.uri.toString() !== other.uri.toString()) {
+      return false
+    }
+
+    if (this.version !== other.version) {
+      return false
+    }
+
+    if (other.wordRange === this.wordRange) {
+      return true
+    }
+
+    if (!other.wordRange || !this.wordRange) {
+      return false
+    }
+
+    return this.wordRange.isEqual(other.wordRange)
   }
-  return text
+
+  /**
+   * Creates a CacheKey instance from a given TextEditor.
+   * @param editor - The TextEditor to create the CacheKey from, or undefined if not applicable.
+   * @returns A new CacheKey instance.
+   */
+  static createCacheKey(editor: vscode.TextEditor | undefined): CacheKey {
+    if (!editor) {
+      return new CacheKey(vscode.Uri.parse(''), 0, undefined)
+    }
+
+    return new CacheKey(
+      editor.document.uri,
+      editor.document.version,
+      editor.document.getWordRangeAtPosition(editor.selection.active)
+    )
+  }
 }
-
-// type CacheKey = typeof cacheKeyNone | DocumentCacheKey
-
-// const cacheKeyNone = { type: 'none' } as const
-
-// class DocumentCacheKey {
-//   readonly type = 'document'
-
-//   constructor(
-//     public readonly url: vscode.Uri,
-//     public readonly version: number,
-//     public readonly wordRange: vscode.Range | undefined
-//   ) {}
-
-//   public equals(other: DocumentCacheKey): boolean {
-//     if (this.url.toString() !== other.url.toString()) {
-//       return false
-//     }
-
-//     if (this.version !== other.version) {
-//       return false
-//     }
-
-//     if (other.wordRange === this.wordRange) {
-//       return true
-//     }
-
-//     if (!other.wordRange || !this.wordRange) {
-//       return false
-//     }
-
-//     return this.wordRange.isEqual(other.wordRange)
-//   }
-// }
-
-// function cacheKeyEquals(a: CacheKey, b: CacheKey): boolean {
-//   if (a === b) {
-//     return true
-//   }
-
-//   if (a.type !== b.type) {
-//     return false
-//   }
-
-//   if (a.type === 'none' || b.type === 'none') {
-//     return false
-//   }
-
-//   return a.equals(b)
-// }
-
-// function createCacheKey(editor: vscode.TextEditor | undefined): CacheKey {
-//   if (!editor) {
-//     return cacheKeyNone
-//   }
-
-//   return new DocumentCacheKey(
-//     editor.document.uri,
-//     editor.document.version,
-//     editor.document.getWordRangeAtPosition(editor.selection.active)
-//   )
-// }
-
-// vscode.workspace.onDidChangeConfiguration(
-//   () => {
-//     this.updateConfiguration()
-//   },
-//   null,
-//   this._disposables
-// )
-
-// this.renderer.needsRender(
-//   () => {
-//     this.update(/* force */ true)
-//   },
-//   undefined,
-//   this._disposables
-// )
-
-// private updateConfiguration() {
-//   const config = vscode.workspace.getConfiguration('defView')
-//   this._updateMode = config.get<UpdateMode>('definitionView.updateMode') || UpdateMode.Live
-// }
 
 // // 이 코드는 TextEditor에서 symbol을 클릭했을때 Reference Result View를 오픈하는 코드이다.
 // // 이 뷰는 find all references, find all implementations, show call hierarchy 기능을 실행하면

@@ -6,18 +6,6 @@
 
   const main = document.getElementById('main')
 
-  // const startingState = vscode.getState();
-
-  // if (startingState) {
-  //     if (startingState.body) {
-  //         updateContent(startingState.body);
-  //     } else if (startingState.noContent) {
-  //         setNoContent(startingState.noContent);
-  //     }
-  // }
-
-  let hasUpdated = false
-
   document.getElementById('openFindAllReference')?.addEventListener('click', function (event) {
     event.preventDefault()
     vscode.postMessage({ command: 'openFindAllReference' })
@@ -45,26 +33,8 @@
 
   // Handle messages sent from the extension to the webview
   window.addEventListener('message', event => {
-    const message = event.data // The json data that the extension sent
-    switch (message.type) {
-      case 'update': {
-        if (main) {
-          main.innerHTML = message.body
-          // vscode.setState({ body: message.body });
-        }
-        hasUpdated = true
-        break
-      }
-      case 'noContent': {
-        if (!hasUpdated || message.updateMode === 'live') {
-          if (main) {
-            main.innerHTML = `<p class="no-content">${message.body}</p>`
-            // vscode.setState({ noContent: message.body });
-          }
-        }
-        hasUpdated = true
-        break
-      }
+    if (main) {
+      main.innerHTML = event.data.body
     }
   })
 })()
