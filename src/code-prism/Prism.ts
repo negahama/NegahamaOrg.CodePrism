@@ -292,7 +292,7 @@ export class Prism {
   static getDefaultNote(content?: string): Note {
     return {
       id: uuid(),
-      category: 'General',
+      category: 'Todo',
       importance: 'Medium',
       createdAt: new Date().toISOString(),
       content: content ?? 'I have something to do',

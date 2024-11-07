@@ -634,7 +634,7 @@ export class PrismCommentController {
     }
 
     const category = await vscode.window.showInputBox({
-      placeHolder: 'e.g., "General", "Todo", "Review", "Document", anything you want',
+      placeHolder: 'e.g., "Todo", "Review", "Document", "Bookmark", anything you want',
       prompt: `Enter new category `,
       value: desc.author.name,
     })

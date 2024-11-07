@@ -335,23 +335,24 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<PrismTreeViewE
         // Issue를 추가하려고 하는데 이를 담을 PrismItem이 없는 경우
         const prismItem = this.items.find(item => item instanceof PrismItem && item.prism === data.prism)
         if (!prismItem) {
-          console.warn('append-issue: No exist data.prism')
+          vscode.window.showWarningMessage('append-issue: No exist data.prism')
           this.reload()
         } else {
           // issue가 추가, 삭제되면 PrismItem의 `has # issues`메시지도 갱신되어야 한다.
-          PrismItem.refreshItem(prismItem)
-          this.refreshPrismView(prismItem)
+          this.updatePrismItem(data.prism)
         }
       } else {
         assert.ok(data.prism)
         assert.ok(data.issue)
 
         // Issue를 추가하려고 하는데 이미 동일한 IssueItem이 있는 경우
-        const debug = this.items.find(item => item instanceof IssueItem && item.issue === data.issue)
-        if (debug) {
-          console.warn('append-issue: item.prism === data.prism :', debug.prism === data.prism)
-          console.warn('append-issue: item.issue === data.issue')
+        const issueItem = this.items.find(item => item instanceof IssueItem && item.issue === data.issue)
+        if (issueItem) {
+          console.warn('append-issue: item.prism === data.prism :', issueItem.prism === data.prism)
+          vscode.window.showWarningMessage('append-issue: item.issue === data.issue')
           this.reload()
+        } else {
+          this.appendIssueItem(data.prism, data.issue)
         }
       }
     })
@@ -367,12 +368,11 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<PrismTreeViewE
         assert.ok(data.prism)
         const prismItem = this.items.find(item => item instanceof PrismItem && item.prism === data.prism)
         if (!prismItem) {
-          console.warn('remove-issue: No exist data.prism')
+          vscode.window.showWarningMessage('remove-issue: No exist data.prism')
           this.reload()
         } else {
           // issue가 추가, 삭제되면 PrismItem의 `has # issues`메시지도 갱신되어야 한다.
-          PrismItem.refreshItem(prismItem)
-          this.refreshPrismView(prismItem)
+          this.updatePrismItem(data.prism)
         }
       } else {
         assert.ok(data.prism)
@@ -381,14 +381,13 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<PrismTreeViewE
         // this.items 자체가 IssueItem이기 때문에 tree인 경우와는 다르게 item 내부의 변화가 없다.
         // 따라서 this.refreshPrismView()로 전혀 갱신되지 않는다. 직접 삭제해 주어야 한다.
         // 이미 없는 경우도 확인한다.
-        const debug = this.items.find(item => item instanceof IssueItem && item.issue === data.issue)
-        if (!debug) {
-          console.warn('remove-issue: No exist data.issue')
+        const issueItem = this.items.find(item => item instanceof IssueItem && item.issue === data.issue)
+        if (!issueItem) {
+          vscode.window.showWarningMessage('remove-issue: No exist data.issue')
           this.reload()
         } else {
           this.deleteIssueItem(data.prism, data.issue)
         }
-        this.refreshPrismView()
       }
     })
 
