@@ -178,6 +178,17 @@ export class PrismCommentController {
     // }
 
     // CommentController의 구독을 처리한다.
+    PrismManager.subscribe('delete-prism', (data: SubscribeType) => {
+      if (data.prism) {
+        this.commentThreads.get(data.prism.name)?.forEach(thread => thread.dispose())
+      }
+    })
+
+    // issue를 remove하는 것은 PrismTreeView나 여기서 발생되는데
+    // 여기서는 deleteIssue()에서 처리하고 PrismTreeView에서 발생하는 것은
+    // PrismCommand의 CodePrism.command.issue.delete 명령 처리에서 여기서의 처리까지 모두 처리하기 때문에
+    // remove-issue event는 subscribe할 필요가 없다.
+
     PrismManager.subscribe('append-note', (data: SubscribeType) => {
       //todo
     })

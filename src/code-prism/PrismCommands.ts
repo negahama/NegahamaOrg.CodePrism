@@ -4,7 +4,7 @@ import * as path from 'path'
 import { Issue, Prism } from './Prism'
 import { PrismManager } from './PrismManager'
 import { NoteDescription, PrismCommentController } from './PrismCommentController'
-import { IssueItem, PrismItem, TreeElement, PrismTreeProvider } from './PrismTreeProvider'
+import { IssueItem, PrismItem, PrismTreeViewElement, PrismTreeProvider } from './PrismTreeProvider'
 import { PrismFileManager } from './PrismFileManager'
 import { PrismViewer } from './PrismViewer'
 import { linkdetector_activate } from './PrismLinkDetector'
@@ -30,13 +30,17 @@ export async function prism_activate(context: vscode.ExtensionContext) {
   prismTreeProvider.register()
 
   /**
-   * Creates a TreeView for the CodePrism extension.
+   * Creates a TreeView instance for the 'CodePrism.view.prismView' view.
+   * The TreeView is populated using the provided `prismTreeProvider` and
+   * includes a 'Collapse All' button.
    *
-   * @param {string} id - The identifier for the TreeView.
-   * @param {vscode.TreeDataProvider<PrismItem>} treeDataProvider - The data provider for the TreeView.
-   * @param {boolean} showCollapseAll - Whether to show the "Collapse All" button in the TreeView.
+   * @constant
+   * @type {vscode.TreeView}
+   * @param {string} id - The unique identifier for the TreeView.
+   * @param {vscode.TreeDataProvider} treeDataProvider - The data provider for the TreeView.
+   * @param {boolean} showCollapseAll - Whether to show the 'Collapse All' button.
    */
-  const prismTreeView: vscode.TreeView<PrismItem> = vscode.window.createTreeView('CodePrism.view.prismView', {
+  const prismTreeView = vscode.window.createTreeView('CodePrism.view.prismView', {
     treeDataProvider: prismTreeProvider,
     showCollapseAll: true,
   })
@@ -134,10 +138,22 @@ export async function prism_activate(context: vscode.ExtensionContext) {
     })
   )
 
+  // CodePrism.command.issue.addByContext 명령은 editor/context 와 editor/lineNumber/context 에서 발생한다.
+  // editor/context 에서 발생하는 경우에는 그냥 uri만 전달받으며
+  // editor/lineNumber/context 에서 발생하는 경우에는 아래의 두 개체를 전달받는다.
+  //   1) { uri, lineNumber }
+  //   2) { preserveFocus: false } // 사용하지 않음
   context.subscriptions.push(
-    vscode.commands.registerCommand('CodePrism.command.issue.addByContext', (uri: vscode.Uri) => {
-      commentController.addIssueByContext(uri)
-    })
+    vscode.commands.registerCommand(
+      'CodePrism.command.issue.addByContext',
+      (arg: vscode.Uri | { uri: vscode.Uri; lineNumber: number }) => {
+        if (arg instanceof vscode.Uri) {
+          commentController.addIssueByContext(arg)
+        } else {
+          commentController.addIssueByContext(arg.uri)
+        }
+      }
+    )
   )
 
   context.subscriptions.push(
@@ -153,7 +169,7 @@ export async function prism_activate(context: vscode.ExtensionContext) {
   )
 
   // CodePrism.command.issue.delete command는 다음의 두 가지 경우에서 발생할 수 있고 그래서 인수가 복잡하다.
-  // 1) PrismTreeView의 PrismItem의 context menu에서 delete icon를 클릭 : "view/item/context" 참고
+  // 1) PrismTreeView의 IssueItem의 context menu에서 delete icon를 클릭 : "view/item/context" 참고
   // 2) Comment Controller의 thread context menu에서도 삭제할 수 있다 : "comments/commentThread/title" 참고
   context.subscriptions.push(
     vscode.commands.registerCommand(
@@ -245,37 +261,37 @@ export async function prism_activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
     vscode.commands.registerCommand('CodePrism.command.prismView.asTree', () => {
-      prismTreeProvider.refresh('tree', '')
+      prismTreeProvider.refresh('tree', undefined)
     })
   )
 
   context.subscriptions.push(
     vscode.commands.registerCommand('CodePrism.command.prismView.asList', () => {
-      prismTreeProvider.refresh('list', '')
+      prismTreeProvider.refresh('list', undefined)
     })
   )
 
   context.subscriptions.push(
     vscode.commands.registerCommand('CodePrism.command.prismView.sortByName', () => {
-      prismTreeProvider.refresh('', 'name')
+      prismTreeProvider.refresh(undefined, 'name')
     })
   )
 
   context.subscriptions.push(
     vscode.commands.registerCommand('CodePrism.command.prismView.sortByCategory', () => {
-      prismTreeProvider.refresh('', 'cate')
+      prismTreeProvider.refresh(undefined, 'cate')
     })
   )
 
   context.subscriptions.push(
     vscode.commands.registerCommand('CodePrism.command.prismView.sortByCreation', () => {
-      prismTreeProvider.refresh('', 'time')
+      prismTreeProvider.refresh(undefined, 'time')
     })
   )
 
   context.subscriptions.push(
     vscode.commands.registerCommand('CodePrism.command.prismView.expandAll', async () => {
-      const expandAllItems = async (item: TreeElement) => {
+      const expandAllItems = async (item: PrismTreeViewElement) => {
         await prismTreeView.reveal(item, { expand: true, focus: false, select: false })
         const children = await prismTreeProvider.getChildren(item)
         if (children) {
@@ -310,8 +326,9 @@ export async function prism_activate(context: vscode.ExtensionContext) {
 
   output.log('activating is done')
 
-  // vscode.commands.executeCommand('CodePrism.command.test')
   // // 나중에 테스트용으로 사용할 목적으로 남겨둔다.
+  // vscode.commands.executeCommand('CodePrism.command.test')
+
   // context.subscriptions.push(
   //   vscode.commands.registerCommand('CodePrism.command.test', () => {
   //     console.log('CodePrism.command.test called:')
@@ -322,23 +339,24 @@ export async function prism_activate(context: vscode.ExtensionContext) {
   //     // })
   //   })
   // )
-  // context.subscriptions.push(
-  //   vscode.commands.registerCommand('CodePrism.command.showQuickPickExample', async () => {
-  //     const pickItems: vscode.QuickPickItem[] = [
-  //       { label: 'Option 1', description: 'This is option 1' },
-  //       { label: 'Option 2', description: 'This is option 2' },
-  //       { label: 'Option 3', description: 'This is option 3' },
-  //     ]
 
-  //     const selected = await vscode.window.showQuickPick(pickItems, {
-  //       placeHolder: 'Select an option',
-  //     })
-
-  //     if (selected) {
-  //       vscode.window.showInformationMessage(`You selected: ${selected.label}`)
-  //     } else {
-  //       vscode.window.showInformationMessage('No option selected')
-  //     }
+  // vscode.commands.registerCommand('CodePrism.command.test', async () => {
+  //   const commandArray = ['CodePrism.command.prismFile.show', 'CodePrism.command.prismFile.delete']
+  //   const pickItems: vscode.QuickPickItem[] = commandArray.map(c => {
+  //     return { label: c, description: c }
   //   })
-  // )
+
+  //   const selected = await vscode.window.showQuickPick(pickItems, {
+  //     title: 'Command Actions of Code Prism',
+  //     placeHolder: 'Select an command'
+  //   })
+  //   if (!selected) return
+
+  //   switch (selected.label) {
+  //     case 'CodePrism.command.prismFile.show':
+  //       return vscode.commands.executeCommand(selected.label)
+  //     default:
+  //       return vscode.commands.executeCommand(selected.label)
+  //   }
+  // })
 }

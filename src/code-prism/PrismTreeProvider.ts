@@ -19,9 +19,9 @@ export class PrismItem extends vscode.TreeItem {
   constructor(public readonly prism: Prism) {
     super(prism.name, vscode.TreeItemCollapsibleState.Collapsed)
 
+    // 여기서는 prism의 내용이 변경되더라도 변경되지 않는 항목들만 설정한다.
     this.tooltip = prism.name
     this.iconPath = new vscode.ThemeIcon('file-code', new vscode.ThemeColor('terminal.ansiGreen'))
-    this.description = PrismItem.getDescription(prism)
 
     // contextValue는 'contributes/menus/view/item/context'에서 prismFile.delete, issue.delete 명령을 구분하기 위해서 사용한다.
     this.contextValue = 'PrismItem'
@@ -32,19 +32,28 @@ export class PrismItem extends vscode.TreeItem {
       title: 'Open',
       arguments: [this],
     }
+
+    // prism의 내용이 변경되면 갱신되어야 할 것은 모두 refreshItem()에서 처리한다.
+    PrismItem.refreshItem(this)
   }
 
   /**
-   * Returns a description of the given prism object, indicating the number of issues it has.
+   * Refreshes the given PrismItem by updating its description.
+   *
+   * @param item - The PrismItem to be refreshed.
+   */
+  static refreshItem(item: PrismItem) {
+    item.description = this.getDescription(item.prism)
+  }
+
+  /**
+   * Returns a description of the given prism, including the number of issues it has.
    *
    * @param prism - The prism object for which the description is generated.
    * @returns A string describing the number of issues the prism has.
    */
   static getDescription(prism: Prism) {
     return 'has ' + prism.getIssuesCount().toString() + ' issues'
-  }
-  static updateDescription(item: PrismItem) {
-    item.description = this.getDescription(item.prism)
   }
 }
 
@@ -80,12 +89,6 @@ export class IssueItem extends vscode.TreeItem {
     // IssueItem은 자식을 가지지 않으므로 vscode.TreeItemCollapsibleState.None을 사용한다.
     super(label, vscode.TreeItemCollapsibleState.None)
 
-    // tooltip은 issue의 title(즉 marking된 부분의 코드와 파일명)을 사용하며
-    // 아울러 note content가 길어서 모두 표시되지 않는 경우를 위해 content도 표시한다.
-    const tooltip = new vscode.MarkdownString('$(code) ', true)
-    tooltip.appendMarkdown(issue.title + '\n\n---\n$(comment) ' + note.content)
-    this.tooltip = tooltip
-
     // icon은 commentController와 동일하게 하기 위해 comment icon을 사용한다.
     this.iconPath = new vscode.ThemeIcon('comment', new vscode.ThemeColor('terminal.ansiYellow'))
 
@@ -98,13 +101,45 @@ export class IssueItem extends vscode.TreeItem {
       title: 'Open',
       arguments: [this],
     }
+
+    // issue의 내용이 변경되면 갱신되어야 할 것은 모두 refreshItem()에서 처리한다.
+    IssueItem.refreshItem(this)
+  }
+
+  /**
+   * Refreshes the given issue item by updating its label and tooltip.
+   *
+   * @param item - The issue item to refresh.
+   *
+   * The label is constructed using the first note's category and content, with the category highlighted.
+   * The tooltip is created using the issue's title and the note's content, formatted as a Markdown string.
+   *
+   * @throws Will throw an error if the issue does not have at least one note.
+   */
+  static refreshItem(item: IssueItem) {
+    const note = item.issue.notes && item.issue.notes.length > 0 ? item.issue.notes[0] : undefined
+    assert.ok(note, 'Issue must have at least one note')
+
+    const label: vscode.TreeItemLabel = {
+      label: `${note.category} ▷ ${note.content}`,
+      highlights: [[0, note.category.length]],
+    }
+    item.label = label
+
+    // tooltip은 issue의 title(즉 marking된 부분의 코드와 파일명)을 사용하며
+    // 아울러 note content가 길어서 모두 표시되지 않는 경우를 위해 content도 표시한다.
+    const tooltip = new vscode.MarkdownString('$(code) ', true)
+    tooltip.appendMarkdown(item.issue.title + '\n\n---\n$(comment) ' + note.content)
+    item.tooltip = tooltip
   }
 }
 
 /**
  * Represents an element in the tree structure, which can be either a `PrismItem` or a `IssueItem`.
  */
-export type TreeElement = PrismItem | IssueItem
+export type PrismTreeViewElement = PrismItem | IssueItem
+export type PrismTreeViewViewType = 'tree' | 'list'
+export type PrismTreeViewSortType = 'name' | 'cate' | 'time'
 
 /**
  * Provides a data provider for the Prism tree view in Visual Studio Code.
@@ -112,16 +147,16 @@ export type TreeElement = PrismItem | IssueItem
  * for the tree view. This class manages the list of Prism items, handles their
  * retrieval, addition, deletion, and refresh operations.
  *
- * @implements {vscode.TreeDataProvider<TreeElement>}
+ * @implements {vscode.TreeDataProvider<PrismTreeViewElement>}
  */
-export class PrismTreeProvider implements vscode.TreeDataProvider<TreeElement> {
+export class PrismTreeProvider implements vscode.TreeDataProvider<PrismTreeViewElement> {
   /**
    * An array of TreeElement objects representing the items in the tree.
    * This array is initially empty and can be populated with TreeElement instances.
    */
-  private items: TreeElement[] = []
+  private items: PrismTreeViewElement[] = []
 
-  private viewMode: string = 'tree'
+  private viewMode: PrismTreeViewViewType = 'tree'
   private sortByName: string = 'asc'
   private sortByCate: string = 'asc'
   private sortByTime: string = 'asc'
@@ -131,19 +166,19 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<TreeElement> {
    * It emits an event with a `TreeElement` or `undefined` as the payload.
    *
    * @private
-   * @type {vscode.EventEmitter<TreeElement | undefined>}
+   * @type {vscode.EventEmitter<PrismTreeViewElement | undefined>}
    */
   // prettier-ignore
-  private _onDidChangeTreeData: vscode.EventEmitter<TreeElement | undefined> = 
-    new vscode.EventEmitter<TreeElement | undefined>()
+  private _onDidChangeTreeData: vscode.EventEmitter<PrismTreeViewElement | undefined> = 
+    new vscode.EventEmitter<PrismTreeViewElement | undefined>()
 
   /**
    * An event that is fired when the tree data changes.
    *
    * @readonly
-   * @type {vscode.Event<TreeElement | undefined>}
+   * @type {vscode.Event<PrismTreeViewElement | undefined>}
    */
-  readonly onDidChangeTreeData: vscode.Event<TreeElement | undefined> = this._onDidChangeTreeData.event
+  readonly onDidChangeTreeData: vscode.Event<PrismTreeViewElement | undefined> = this._onDidChangeTreeData.event
 
   /**
    * Retrieves the parent of the given tree element.
@@ -151,7 +186,7 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<TreeElement> {
    * @param element - The tree element for which to get the parent.
    * @returns The parent tree element if the given element is an instance of `IssueItem`, otherwise `undefined`.
    */
-  getParent(element: TreeElement): vscode.ProviderResult<TreeElement> {
+  getParent(element: PrismTreeViewElement): vscode.ProviderResult<PrismTreeViewElement> {
     if (element instanceof IssueItem) {
       return element.parent
     }
@@ -164,7 +199,7 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<TreeElement> {
    * @param element - The PrismFile instance for which to retrieve the TreeItem.
    * @returns The TreeItem representation of the provided PrismFile element.
    */
-  getTreeItem(element: TreeElement): vscode.TreeItem {
+  getTreeItem(element: PrismTreeViewElement): vscode.TreeItem {
     return element
   }
 
@@ -175,7 +210,7 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<TreeElement> {
    * @param element - The `PrismFile` element for which to retrieve children. Optional.
    * @returns A promise that resolves to an array of `PrismFile` objects representing the child elements.
    */
-  getChildren(element?: TreeElement): Thenable<TreeElement[]> {
+  getChildren(element?: PrismTreeViewElement): Thenable<PrismTreeViewElement[]> {
     if (!element) {
       return Promise.resolve(this.items)
     } else {
@@ -210,7 +245,7 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<TreeElement> {
    * - `this.sortByCate` for 'cate'
    * - `this.sortByTime` for 'time'
    */
-  private sortTreeElements(sort: string) {
+  private sortTreeElements(sort: PrismTreeViewSortType) {
     switch (sort) {
       case 'name': {
         this.items = this.items.sort((a, b) => {
@@ -304,7 +339,7 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<TreeElement> {
           this.reload()
         } else {
           // issue가 추가, 삭제되면 PrismItem의 `has # issues`메시지도 갱신되어야 한다.
-          PrismItem.updateDescription(prismItem)
+          PrismItem.refreshItem(prismItem)
           this.refreshPrismView(prismItem)
         }
       } else {
@@ -336,7 +371,7 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<TreeElement> {
           this.reload()
         } else {
           // issue가 추가, 삭제되면 PrismItem의 `has # issues`메시지도 갱신되어야 한다.
-          PrismItem.updateDescription(prismItem)
+          PrismItem.refreshItem(prismItem)
           this.refreshPrismView(prismItem)
         }
       } else {
@@ -358,11 +393,17 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<TreeElement> {
     })
 
     PrismManager.subscribe('update-note', (data: SubscribeType) => {
-      this.refreshPrismView()
+      if (data.prism) {
+        assert.ok(data.issue)
+        this.updateIssueItem(data.prism, data.issue)
+      }
     })
 
     PrismManager.subscribe('remove-note', (data: SubscribeType) => {
-      this.refreshPrismView()
+      if (data.prism) {
+        assert.ok(data.issue)
+        this.deleteIssueItem(data.prism, data.issue)
+      }
     })
   }
 
@@ -402,7 +443,7 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<TreeElement> {
    * If the mode is 'list', it appends each issue item of the prisms. It also updates the sort mode and refreshes the Prism view.
    * Additionally, it sets the context for the prism view mode in VS Code.
    */
-  async refresh(view: string, sort: string) {
+  async refresh(view: PrismTreeViewViewType | undefined, sort: PrismTreeViewSortType | undefined) {
     if (view && view !== this.viewMode) {
       this.viewMode = view
       this.reload(await PrismManager.loadPrismFiles())
@@ -431,7 +472,7 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<TreeElement> {
    * Refreshes the Prism view by firing the `_onDidChangeTreeData` event.
    * This method triggers an update to the tree data, causing the view to refresh.
    */
-  refreshPrismView(data?: TreeElement) {
+  refreshPrismView(data?: PrismTreeViewElement) {
     this._onDidChangeTreeData.fire(data)
   }
 
@@ -441,6 +482,10 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<TreeElement> {
    * @param prism - The Prism object to be converted into a PrismItem and appended.
    */
   appendPrismItem(prism: Prism) {
+    if (this.viewMode === 'list') {
+      return
+    }
+
     this.items.push(new PrismItem(prism))
     this.refreshPrismView()
   }
@@ -451,8 +496,33 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<TreeElement> {
    * @param name - The label of the item to be deleted.
    */
   deletePrismItem(prism: Prism) {
+    if (this.viewMode === 'list') {
+      return
+    }
+
     this.items = this.items.filter(item => item.label !== prism.name)
     this.refreshPrismView()
+  }
+
+  /**
+   * Updates the specified prism item in the view.
+   *
+   * This method checks if the current view mode is not 'list'. If it is 'list', the method returns immediately.
+   * Otherwise, it searches for the prism item in the list of items. If the prism item is found, it refreshes the item
+   * and updates the prism view.
+   *
+   * @param prism - The prism object to be updated.
+   */
+  updatePrismItem(prism: Prism) {
+    if (this.viewMode === 'list') {
+      return
+    }
+
+    const prismItem = this.items.find(item => item instanceof PrismItem && item.prism === prism)
+    if (prismItem) {
+      PrismItem.refreshItem(prismItem)
+      this.refreshPrismView(prismItem)
+    }
   }
 
   /**
@@ -462,6 +532,12 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<TreeElement> {
    * @param issue - The issue object to be appended.
    */
   appendIssueItem(prism: Prism, issue: Issue) {
+    // tree view mode에서는 issue를 별도로 추가할 필요가 없다.
+    // issue는 PrismItem의 children으로 getChildren()에서 처리된다.
+    if (this.viewMode === 'tree') {
+      return
+    }
+
     this.items.push(new IssueItem(prism, issue))
     this.refreshPrismView()
   }
@@ -472,7 +548,33 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<TreeElement> {
    * @param name - The label of the item to be deleted.
    */
   deleteIssueItem(prism: Prism, issue: Issue) {
+    if (this.viewMode === 'tree') {
+      return
+    }
+
     this.items = this.items.filter(item => !(item instanceof IssueItem && item.prism === prism && item.issue === issue))
     this.refreshPrismView()
+  }
+
+  /**
+   * Updates the issue item in the view based on the current view mode.
+   * If the view mode is 'tree', the method currently does nothing (todo).
+   * Otherwise, it finds the corresponding issue item and refreshes it.
+   *
+   * @param prism - The Prism object associated with the issue.
+   * @param issue - The Issue object to be updated.
+   */
+  updateIssueItem(prism: Prism, issue: Issue) {
+    if (this.viewMode === 'tree') {
+      //todo
+    } else {
+      const issueItem = this.items.find(
+        item => item instanceof IssueItem && item.prism === prism && item.issue === issue
+      )
+      if (issueItem) {
+        IssueItem.refreshItem(issueItem as IssueItem)
+        this.refreshPrismView(issueItem)
+      }
+    }
   }
 }

@@ -83,6 +83,13 @@ The prism file and the document correspond one-to-one, and one prism file may co
 
 ## 🔗 Release Notes
 
+### 1.3.2 - November 7, 2024
+
+bug fix
+
+- fixed the bug that don't delete comments when the prism file is deleted
+- fixed the bug that don't change the category when prism tree view is list mode
+
 ### 1.3.1 - November 6, 2024
 
 changed icon color and tooltip content of prism tree view and bug fix.
