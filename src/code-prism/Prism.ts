@@ -1,8 +1,6 @@
-import * as vscode from 'vscode'
 import crypto from 'crypto'
 
 import { PubSub, SubscribeType } from './PrismManager'
-import { PrismFileManager } from './PrismFileManager'
 
 /**
  * Generates a universally unique identifier (UUID).
@@ -12,7 +10,7 @@ import { PrismFileManager } from './PrismFileManager'
  *
  * @returns {string} A randomly generated UUID in hexadecimal format.
  */
-function uuid(): string {
+export function uuid(): string {
   return crypto.randomBytes(16).toString('hex')
 }
 
@@ -160,36 +158,6 @@ export class Prism {
   }
 
   /**
-   * Appends issue details to the current issue collection.
-   *
-   * @param title - The title of the issue.
-   * @param source - The source file path.
-   * @param range - The range within the source file.
-   *
-   * The source file path is stored relative to the workspace root, which must start with a '/'.
-   * The line and column numbers in the range are adjusted to be 1-based.
-   */
-  createIssueDetails(title: string, source: string, range: vscode.Range): Issue {
-    const issue: Issue = {
-      id: uuid(),
-      title,
-      source: {
-        // source file은 workspace root 경로로 저장한다.
-        // 이때 마크다운에서 workspace root 경로는 반드시 / 로 시작해야 하기 때문에
-        // CodePrism 전체에서 workspace root 경로는 모두 / 로 시작하도록 정해져 있다.
-        file: '/' + PrismFileManager.getRelativePath(source).replace(/\\/g, '/'),
-        startLine: range.start.line + 1,
-        startColumn: range.start.character,
-        endLine: range.end.line + 1,
-        endColumn: range.end.character,
-      },
-      notes: [],
-    }
-
-    return issue
-  }
-
-  /**
    * Updates an existing issue by first removing the issue with the same title
    * and then adding the new issue.
    *
@@ -278,9 +246,14 @@ export class Prism {
       return
     }
 
+    // note의 경우에는 삭제 후 issue.notes가 비어있으면 해당 issue도 삭제한다.
     issue.notes = issue?.notes.filter(n => n.id !== noteId)
-    this.pubSub?.publish('remove-note', { prism: this, issue, note })
-    // console.log(`🚀 ~ removeNote: ${issueId}, ${note.id}`)
+    if (issue.notes.length === 0) {
+      this.removeIssue(issueId)
+    } else {
+      this.pubSub?.publish('remove-note', { prism: this, issue, note })
+      // console.log(`🚀 ~ removeNote: ${issueId}, ${note.id}`)
+    }
   }
 
   /**

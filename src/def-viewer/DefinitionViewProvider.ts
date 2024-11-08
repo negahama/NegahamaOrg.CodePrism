@@ -177,7 +177,7 @@ export class DefinitionViewProvider implements vscode.WebviewViewProvider {
           vscode.commands.executeCommand('workbench.action.findInFiles')
           break
         case 'openSearchEditor':
-          vscode.commands.executeCommand('search.action.openEditor')
+          vscode.commands.executeCommand('search.action.openNewEditor')
           break
       }
     })

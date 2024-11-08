@@ -3,9 +3,8 @@ import * as path from 'path'
 
 import { Issue, Prism } from './Prism'
 import { PrismManager } from './PrismManager'
-import { NoteDescription, PrismCommentController } from './PrismCommentController'
-import { IssueItem, PrismItem, PrismTreeViewElement, PrismTreeProvider } from './PrismTreeProvider'
-import { PrismFileManager } from './PrismFileManager'
+import { PrismComment, PrismCommentController } from './PrismCommentController'
+import { PrismItem, IssueItem, PrismTreeViewElement, PrismTreeProvider } from './PrismTreeProvider'
 import { PrismViewer } from './PrismViewer'
 import { linkdetector_activate } from './PrismLinkDetector'
 import { docdetector_activate } from './PrismDocDetector'
@@ -34,8 +33,6 @@ export async function prism_activate(context: vscode.ExtensionContext) {
    * The TreeView is populated using the provided `prismTreeProvider` and
    * includes a 'Collapse All' button.
    *
-   * @constant
-   * @type {vscode.TreeView}
    * @param {string} id - The unique identifier for the TreeView.
    * @param {vscode.TreeDataProvider} treeDataProvider - The data provider for the TreeView.
    * @param {boolean} showCollapseAll - Whether to show the 'Collapse All' button.
@@ -111,6 +108,7 @@ export async function prism_activate(context: vscode.ExtensionContext) {
   // 2) PrismTreeView의 PrismItem의 context menu에서 show icon를 클릭
   // 1)의 경우에는 command를 직접 호출하는 경우이므로 argument를 prism으로 할 수 있지만
   // 2)의 경우에는 VS Code에 의해서 PrismItem이 전달되기 때문에 1)의 경우도 인수를 PrismItem으로 하여 동일하게 처리되게 하였다.
+  // [PrismItem의 this.command argument](/src\code-prism\PrismTreeProvider.ts#30-35) 참고
   context.subscriptions.push(
     vscode.commands.registerCommand('CodePrism.command.prismFile.show', (item: PrismItem) => {
       PrismViewer.showPrismViewer(item.prism)
@@ -120,11 +118,6 @@ export async function prism_activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand('CodePrism.command.prismFile.delete', async (item: PrismItem) => {
       const prism = item.prism
-      if (!PrismFileManager.isPrismFileExists(prism.name)) {
-        vscode.window.showWarningMessage('The prism does not exist.')
-        return
-      }
-
       const selectedItem = await vscode.window.showWarningMessage(
         `Are you sure to delete ${prism.name}?`,
         'Continue',
@@ -138,7 +131,8 @@ export async function prism_activate(context: vscode.ExtensionContext) {
     })
   )
 
-  // CodePrism.command.issue.addByContext 명령은 editor/context 와 editor/lineNumber/context 에서 발생한다.
+  // CodePrism.command.issue.addByContext 명령은 command palette, editor/context, editor/lineNumber/context 에서 발생한다.
+  // command palette에서 발생하는 경우에는 인수가 없고
   // editor/context 에서 발생하는 경우에는 그냥 uri만 전달받으며
   // editor/lineNumber/context 에서 발생하는 경우에는 아래의 두 개체를 전달받는다.
   //   1) { uri, lineNumber }
@@ -146,8 +140,10 @@ export async function prism_activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand(
       'CodePrism.command.issue.addByContext',
-      (arg: vscode.Uri | { uri: vscode.Uri; lineNumber: number }) => {
-        if (arg instanceof vscode.Uri) {
+      (arg: vscode.Uri | { uri: vscode.Uri; lineNumber: number } | undefined) => {
+        if (!arg) {
+          commentController.addIssueByContext()
+        } else if (arg instanceof vscode.Uri) {
           commentController.addIssueByContext(arg)
         } else {
           commentController.addIssueByContext(arg.uri)
@@ -168,9 +164,11 @@ export async function prism_activate(context: vscode.ExtensionContext) {
     })
   )
 
-  // CodePrism.command.issue.delete command는 다음의 두 가지 경우에서 발생할 수 있고 그래서 인수가 복잡하다.
+  // issue를 remove하는 것은 PrismCommentController, PrismTreeView, PrismView 이렇게 3곳에서 발생되는데
+  // PrismCommentController, PrismTreeView에서 발생하는 것은 CodePrism.command.issue.delete 명령으로 처리된다.
   // 1) PrismTreeView의 IssueItem의 context menu에서 delete icon를 클릭 : "view/item/context" 참고
   // 2) Comment Controller의 thread context menu에서도 삭제할 수 있다 : "comments/commentThread/title" 참고
+  // PrismView에서는 prism.removeNote() 직접 호출하고 이것에 의해 issue가 제거될 수도 있다.
   context.subscriptions.push(
     vscode.commands.registerCommand(
       'CodePrism.command.issue.delete',
@@ -183,6 +181,8 @@ export async function prism_activate(context: vscode.ExtensionContext) {
           prism = item.prism
           issue = item.issue
         } else {
+          // 인수가 IssueItem이면 prism, issue를 바로 얻을 수 있지만 CommentThread이면
+          // thread의 uri, contextValue(issue id가 저장되어져 있음)등을 통해서 찾아야 한다.
           const thread = threadOrItem as vscode.CommentThread
           const prismName = path.parse(thread!.uri.fsPath).name
           prism = PrismManager.getPrism(prismName)
@@ -191,13 +191,11 @@ export async function prism_activate(context: vscode.ExtensionContext) {
           }
         }
 
+        // 이 명령이 어디에서 호출되어졌는지에 관계없이 화면 갱신은 remove-issue에서 처리한다.
         if (prism && issue) {
           prism.removeIssue(issue.id)
           PrismManager.updatePrism(prism)
         }
-
-        // 아래 코드는 thread를 dispose하기 때문에 가장 마지막에 실행한다.
-        commentController.deleteIssue(threadOrItem)
       }
     )
   )
@@ -217,37 +215,37 @@ export async function prism_activate(context: vscode.ExtensionContext) {
   )
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('CodePrism.command.note.delete', (comment: NoteDescription) => {
+    vscode.commands.registerCommand('CodePrism.command.note.delete', (comment: PrismComment) => {
       commentController.deleteNote(comment)
     })
   )
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('CodePrism.command.note.changeCategory', (comment: NoteDescription) => {
+    vscode.commands.registerCommand('CodePrism.command.note.changeCategory', (comment: PrismComment) => {
       commentController.changeNoteCategory(comment)
     })
   )
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('CodePrism.command.note.makeMarkdown', (comment: NoteDescription) => {
+    vscode.commands.registerCommand('CodePrism.command.note.makeMarkdown', (comment: PrismComment) => {
       commentController.makeMarkdown(comment)
     })
   )
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('CodePrism.command.note.edit', (comment: NoteDescription) => {
+    vscode.commands.registerCommand('CodePrism.command.note.edit', (comment: PrismComment) => {
       commentController.editNote(comment)
     })
   )
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('CodePrism.command.note.save', (comment: NoteDescription) => {
+    vscode.commands.registerCommand('CodePrism.command.note.save', (comment: PrismComment) => {
       commentController.saveNote(comment)
     })
   )
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('CodePrism.command.note.saveCancel', (comment: NoteDescription) => {
+    vscode.commands.registerCommand('CodePrism.command.note.saveCancel', (comment: PrismComment) => {
       commentController.cancelSaveNote(comment)
     })
   )
@@ -310,6 +308,26 @@ export async function prism_activate(context: vscode.ExtensionContext) {
       }
 
       prismTreeProvider.refreshPrismView()
+    })
+  )
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('CodePrism.command.CopyCodeAnchorLink', () => {
+      const editor = vscode.window.activeTextEditor
+      if (!editor) {
+        return
+      }
+
+      let { title, range, path } = PrismManager.getTitleRangePath(editor)
+
+      const exclude = ['(', ')', '[', ']']
+      exclude.forEach(item => {
+        title = title.replaceAll(item, '')
+      })
+
+      const link = `[${title.trim()}](/${path}#${range.start.line + 1}-${range.end.line + 1})`
+
+      vscode.env.clipboard.writeText(link)
     })
   )
 

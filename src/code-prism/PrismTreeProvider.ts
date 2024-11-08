@@ -26,7 +26,7 @@ export class PrismItem extends vscode.TreeItem {
     // contextValue는 'contributes/menus/view/item/context'에서 prismFile.delete, issue.delete 명령을 구분하기 위해서 사용한다.
     this.contextValue = 'PrismItem'
 
-    // arguments로 [this]를 전달하는 이유는 [prismFile.show 명령 등록](./PrismCommands.ts#105-110)하는 부분을 참조한다.
+    // arguments로 [this]를 전달하는 이유는 [prismFile.show 명령 등록](./PrismCommands.ts#106-111)하는 부분을 참조한다.
     this.command = {
       command: 'CodePrism.command.prismFile.show',
       title: 'Open',
@@ -346,9 +346,8 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<PrismTreeViewE
         assert.ok(data.issue)
 
         // Issue를 추가하려고 하는데 이미 동일한 IssueItem이 있는 경우
-        const issueItem = this.items.find(item => item instanceof IssueItem && item.issue === data.issue)
+        const issueItem = this.items.find(item => item instanceof IssueItem && item.issue.id === data.issue?.id)
         if (issueItem) {
-          console.warn('append-issue: item.prism === data.prism :', issueItem.prism === data.prism)
           vscode.window.showWarningMessage('append-issue: item.issue === data.issue')
           this.reload()
         } else {
@@ -381,7 +380,12 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<PrismTreeViewE
         // this.items 자체가 IssueItem이기 때문에 tree인 경우와는 다르게 item 내부의 변화가 없다.
         // 따라서 this.refreshPrismView()로 전혀 갱신되지 않는다. 직접 삭제해 주어야 한다.
         // 이미 없는 경우도 확인한다.
-        const issueItem = this.items.find(item => item instanceof IssueItem && item.issue === data.issue)
+        // 그런데 issue를 삭제하려는 경우가 하나 남은 note를 삭제하려고 하는 경우에도 발생할 수 있는데
+        // 이 경우 data의 issue는 이미 note가 삭제되어진 상태로 전달되고 여기서의 issue는 remove-note를 처리하지 않기 때문에
+        // 노트가 남아있는 상태이므로 item.issue === data.issue 이렇게 비교하면 안된다.
+        // 관련 코드 [여기의 'remove-note'](/src/code-prism/PrismTreeProvider.ts#407)
+        // 관련 코드 [Prism.removeNote](/src/code-prism/Prism.ts#238)
+        const issueItem = this.items.find(item => item instanceof IssueItem && item.issue.id === data.issue?.id)
         if (!issueItem) {
           vscode.window.showWarningMessage('remove-issue: No exist data.issue')
           this.reload()
@@ -399,10 +403,9 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<PrismTreeViewE
     })
 
     PrismManager.subscribe('remove-note', (data: SubscribeType) => {
-      if (data.prism) {
-        assert.ok(data.issue)
-        this.deleteIssueItem(data.prism, data.issue)
-      }
+      // 현재로써는 이 부분이 호출되어도 처리될 것이 없다.
+      // 왜냐하면 issue의 첫번째가 아닌 note들은 표시되지 않고 첫번째 note는 remove-issue로 처리되기 때문이다.
+      console.log('PrismTreeProvider - remove-note:', data)
     })
   }
 
@@ -551,7 +554,7 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<PrismTreeViewE
       return
     }
 
-    this.items = this.items.filter(item => !(item instanceof IssueItem && item.prism === prism && item.issue === issue))
+    this.items = this.items.filter(item => !(item instanceof IssueItem && item.issue.id === issue.id))
     this.refreshPrismView()
   }
 
@@ -565,11 +568,9 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<PrismTreeViewE
    */
   updateIssueItem(prism: Prism, issue: Issue) {
     if (this.viewMode === 'tree') {
-      //todo
+      this.refreshPrismView()
     } else {
-      const issueItem = this.items.find(
-        item => item instanceof IssueItem && item.prism === prism && item.issue === issue
-      )
+      const issueItem = this.items.find(item => item instanceof IssueItem && item.issue.id === issue.id)
       if (issueItem) {
         IssueItem.refreshItem(issueItem as IssueItem)
         this.refreshPrismView(issueItem)

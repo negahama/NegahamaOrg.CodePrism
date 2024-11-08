@@ -34,6 +34,17 @@ export async function mermaid_activate(context: vscode.ExtensionContext) {
       }
     )
 
+    const getCurrentTheme = () => {
+      const configuration = vscode.workspace.getConfiguration()
+      const theme = configuration.get<string>('workbench.colorTheme')
+      return theme
+    }
+
+    let theme = 'default'
+    if (getCurrentTheme()?.toLowerCase().includes('dark')) {
+      theme = 'dark'
+    }
+
     const getContent = (diagram: string | undefined) => {
       let pre = `
       \`\`\`mermaid
@@ -50,46 +61,13 @@ export async function mermaid_activate(context: vscode.ExtensionContext) {
         <body>
           ${pre}
           <script type="module">
-            import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+            import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+            mermaid.initialize({ startOnLoad: true, theme: '${theme}' });
           </script>
         </body>
       </html>
       `
     }
-
-    //     const getContent = () => {
-    //       const config = vscode.workspace.getConfiguration("mermaid");
-    //       const configString = JSON.stringify(config);
-
-    //       const faBase = panel.webview.asWebviewUri(
-    //         vscode.Uri.file(
-    //           context.asAbsolutePath(
-    //             "previewer/dist/vendor/font-awesome/css/font-awesome.min.css"
-    //           )
-    //         )
-    //       );
-
-    //       const jsUrl = panel.webview.asWebviewUri(
-    //         vscode.Uri.file(context.asAbsolutePath("previewer/dist/index.js"))
-    //       );
-
-    //       return `
-    // <!DOCTYPE html>
-    // <html>
-    //   <head>
-    //     <base href="">
-    //     <link rel="stylesheet" href="${faBase}">
-    //     <script>
-    //       window._config = JSON.parse('${configString}');
-    //     </script>
-    //   </head>
-    //   <body>
-    //     <div id="root"></div>
-    //     <script src="${jsUrl}" />
-    //   </body>
-    // </html>
-    // `;
-    //     };
 
     /**
      *
@@ -151,7 +129,6 @@ export async function mermaid_activate(context: vscode.ExtensionContext) {
     vscode.workspace.onDidChangeConfiguration(
       e => {
         panel.webview.html = getContent(undefined)
-        // panel.webview.html = getContent();
       },
       null,
       disposables
@@ -181,7 +158,6 @@ export async function mermaid_activate(context: vscode.ExtensionContext) {
     )
 
     panel.webview.html = getContent(undefined)
-    // panel.webview.html = getContent();
   })
 
   context.subscriptions.push(command)

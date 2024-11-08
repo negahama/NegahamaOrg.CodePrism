@@ -25,7 +25,7 @@ export class DefinitionViewRenderer {
 
     // 코드블럭 렌더링
     renderer.code = ({ text, lang, escaped }): string => {
-      if (lang === undefined) {
+      if (!lang) {
         return `<pre><code>${text}</code></pre>`
       }
       const grammar = Prism.languages[lang]

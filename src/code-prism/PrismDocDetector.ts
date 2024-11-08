@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
 import { PrismManager } from './PrismManager'
-import { PrismFileManager } from './PrismFileManager'
+import { PrismFileSystem, PrismPath } from './PrismFileManager'
 
 /**
  * Represents a document that is linked with a URI and its content.
@@ -45,8 +45,8 @@ export async function docdetector_activate(context: vscode.ExtensionContext) {
    */
   const getLinkedDocInfo = (uri: vscode.Uri): LinkedDoc[] => {
     const linkedFiles: string[] = []
-    const rootFolder = PrismFileManager.getWorkspacePath()
-    const prismFolder = PrismFileManager.getPrismFolderPath()
+    const rootFolder = PrismPath.getWorkspacePath()
+    const prismFolder = PrismPath.getPrismFolderPath()
 
     //todo 이렇게 매번 계산하면 안된다.
     // uri를 소스로 하는 모든 issue에서 언급된 파일들을 모두 리턴한다.
@@ -70,7 +70,7 @@ export async function docdetector_activate(context: vscode.ExtensionContext) {
         uri = vscode.Uri.file(prismFolder + linked.replace('file:///./', '/'))
       }
 
-      return { uri, content: PrismFileManager.getDocContent(uri.fsPath) }
+      return { uri, content: PrismFileSystem.getDocContent(uri.fsPath) }
     })
   }
 

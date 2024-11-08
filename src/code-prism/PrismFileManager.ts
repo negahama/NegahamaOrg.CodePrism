@@ -9,15 +9,9 @@ export const PRISM_DOCS_FOLDER_NAME = 'docs'
 export const PRISM_FILE_EXT = 'prism.json'
 
 /**
- * The `PrismFileManager` class provides methods to manage Prism files within a Visual Studio Code workspace.
- * It includes functionalities to retrieve workspace paths, check for the existence of folders and files,
- * create new files and folders, and perform file operations such as renaming and deleting.
- *
- * @remarks
- * This class relies on the Visual Studio Code API and Node.js file system operations to manage files and directories.
- * It is designed to work within the context of a Visual Studio Code extension.
+ * The `PrismPath` class provides utility methods to retrieve various paths related to the Prism folder within the current workspace.
  */
-export class PrismFileManager {
+export namespace PrismPath {
   /**
    * Retrieves the root path of the current workspace.
    *
@@ -26,7 +20,7 @@ export class PrismFileManager {
    * @remarks
    * If no workspace is open, an error message is logged to the console.
    */
-  static getWorkspacePath(): string {
+  export function getWorkspacePath(): string {
     // const document = vscode.window.activeTextEditor?.document
     // if (document) {
     //   return vscode.workspace.getWorkspaceFolder(document.uri)?.uri?.fsPath ?? ''
@@ -48,7 +42,7 @@ export class PrismFileManager {
    *
    * @returns {string} The name of the Prism folder.
    */
-  static getPrismFolderName(): string {
+  export function getPrismFolderName(): string {
     const settings = vscode.workspace.getConfiguration('CodePrism')
     return settings.get<string>('config.PrismFolder') ?? PRISM_FOLDER_NAME
   }
@@ -58,17 +52,8 @@ export class PrismFileManager {
    *
    * @returns {string} The full path to the Prism folder.
    */
-  static getPrismFolderPath(): string {
-    return path.join(this.getWorkspacePath(), this.getPrismFolderName())
-  }
-
-  /**
-   * Checks if the Prism folder exists.
-   *
-   * @returns {boolean} `true` if the Prism folder exists, otherwise `false`.
-   */
-  static isPrismFolderExists(): boolean {
-    return fs.existsSync(this.getPrismFolderPath())
+  export function getPrismFolderPath(): string {
+    return path.join(getWorkspacePath(), getPrismFolderName())
   }
 
   /**
@@ -76,7 +61,7 @@ export class PrismFileManager {
    *
    * @returns {string} The path to the Prism documentation folder.
    */
-  static getPrismDocsFolderPath(): string {
+  export function getPrismDocsFolderPath(): string {
     // const root = vscode.Uri.file(this.getPrismFolderPath() ?? '')
 
     // // Initialize the current path to the root
@@ -98,16 +83,7 @@ export class PrismFileManager {
 
     // return `${root.path}/${PRISM_DOCS_FOLDER_NAME}`
 
-    return path.join(this.getPrismFolderPath(), PRISM_DOCS_FOLDER_NAME)
-  }
-
-  /**
-   * Checks if the Prism documentation folder exists.
-   *
-   * @returns {boolean} `true` if the Prism documentation folder exists, otherwise `false`.
-   */
-  static isPrismDocsFolderExists(): boolean {
-    return fs.existsSync(this.getPrismDocsFolderPath())
+    return path.join(getPrismFolderPath(), PRISM_DOCS_FOLDER_NAME)
   }
 
   /**
@@ -116,8 +92,47 @@ export class PrismFileManager {
    * @param name - The name of the prism file without extension.
    * @returns The full file path including the prism folder path and file extension.
    */
-  static getPrismFilePath(name: string): string {
-    return path.join(this.getPrismFolderPath(), `${name}.${PRISM_FILE_EXT}`)
+  export function getPrismFilePath(name: string): string {
+    return path.join(getPrismFolderPath(), `${name}.${PRISM_FILE_EXT}`)
+  }
+
+  /**
+   * Computes the relative path from the workspace path to the given file path.
+   *
+   * @param filePath - The absolute path of the file.
+   * @returns The relative path from the workspace path to the given file path.
+   */
+  export function getRelativePath(filePath: string): string {
+    return path.relative(getWorkspacePath(), filePath)
+  }
+}
+
+/**
+ * The `PrismFileManager` class provides methods to manage Prism files within a Visual Studio Code workspace.
+ * It includes functionalities to retrieve workspace paths, check for the existence of folders and files,
+ * create new files and folders, and perform file operations such as renaming and deleting.
+ *
+ * @remarks
+ * This class relies on the Visual Studio Code API and Node.js file system operations to manage files and directories.
+ * It is designed to work within the context of a Visual Studio Code extension.
+ */
+export class PrismFileSystem {
+  /**
+   * Checks if the Prism folder exists.
+   *
+   * @returns {boolean} `true` if the Prism folder exists, otherwise `false`.
+   */
+  static isPrismFolderExists(): boolean {
+    return fs.existsSync(PrismPath.getPrismFolderPath())
+  }
+
+  /**
+   * Checks if the Prism documentation folder exists.
+   *
+   * @returns {boolean} `true` if the Prism documentation folder exists, otherwise `false`.
+   */
+  static isPrismDocsFolderExists(): boolean {
+    return fs.existsSync(PrismPath.getPrismDocsFolderPath())
   }
 
   /**
@@ -127,7 +142,7 @@ export class PrismFileManager {
    * @returns `true` if the prism file exists, otherwise `false`.
    */
   static isPrismFileExists(name: string): boolean {
-    return fs.existsSync(this.getPrismFilePath(name))
+    return fs.existsSync(PrismPath.getPrismFilePath(name))
   }
 
   /**
@@ -141,7 +156,7 @@ export class PrismFileManager {
    * of the prism files.
    */
   static async getPrismFileNames(): Promise<string[]> {
-    if (!PrismFileManager.isPrismFolderExists()) {
+    if (!this.isPrismFolderExists()) {
       return []
     }
 
@@ -156,19 +171,9 @@ export class PrismFileManager {
     // // })
     // return fs.readdirSync(prismFolderPath).filter(name => name.endsWith(PRISM_FILE_EXT))
 
-    let folderName = PrismFileManager.getPrismFolderName()
+    let folderName = PrismPath.getPrismFolderName()
     let files = await vscode.workspace.findFiles(`**/${folderName}/*.prism.json`, null, 500)
     return files.map(file => file.fsPath)
-  }
-
-  /**
-   * Computes the relative path from the workspace path to the given file path.
-   *
-   * @param filePath - The absolute path of the file.
-   * @returns The relative path from the workspace path to the given file path.
-   */
-  static getRelativePath(filePath: string): string {
-    return path.relative(this.getWorkspacePath(), filePath)
   }
 
   /**
@@ -209,7 +214,7 @@ export class PrismFileManager {
     //   fs.rmdirSync(this.getPrismFolderPath())
     // }
 
-    const filePath = this.getPrismFilePath(fileName)
+    const filePath = PrismPath.getPrismFilePath(fileName)
     const workspaceEdit = new vscode.WorkspaceEdit()
     workspaceEdit.deleteFile(vscode.Uri.file(filePath))
     await vscode.workspace.applyEdit(workspaceEdit)
@@ -225,12 +230,12 @@ export class PrismFileManager {
    * The file path is determined by the prism's name.
    */
   static async savePrismFile(prism: Prism): Promise<boolean> {
-    const prismFolderPath = this.getPrismFolderPath()
+    const prismFolderPath = PrismPath.getPrismFolderPath()
     if (!fs.existsSync(prismFolderPath)) {
       fs.mkdirSync(prismFolderPath)
     }
 
-    fs.writeFileSync(this.getPrismFilePath(prism.name), prism.toString())
+    fs.writeFileSync(PrismPath.getPrismFilePath(prism.name), prism.toString())
     return true
   }
 
@@ -246,12 +251,12 @@ export class PrismFileManager {
    * @returns A promise that resolves to `true` if the file was created successfully, or `false` if the file already exists.
    */
   static async createMarkdownFile(name: string, prism: Prism, issue: Issue): Promise<boolean> {
-    const prismFolderPath = this.getPrismFolderPath()
+    const prismFolderPath = PrismPath.getPrismFolderPath()
     if (!fs.existsSync(prismFolderPath)) {
       fs.mkdirSync(prismFolderPath)
     }
 
-    const prismDocsFolderPath = this.getPrismDocsFolderPath()
+    const prismDocsFolderPath = PrismPath.getPrismDocsFolderPath()
     if (!fs.existsSync(prismDocsFolderPath)) {
       fs.mkdirSync(prismDocsFolderPath)
     }
@@ -282,7 +287,7 @@ export class PrismFileManager {
     const content =
       `# ${title}\n` +
       `> This markdown file is for '${prism.name}'.\n>\n` +
-      `> [code](${source}): ${PrismFileManager.getWorkspacePath()}${source}\n>\n` +
+      `> [code](${source}): ${PrismPath.getWorkspacePath()}${source}\n>\n` +
       `> You can edit this file to add more information about '${title}'.\n---\n`
 
     fs.writeFileSync(markdownFilePath, content)
@@ -321,7 +326,7 @@ export class PrismFileManager {
   static getDocContent(fileName: string): string {
     let content: string = '# No content'
     try {
-      const data = PrismFileManager.readFile(fileName)
+      const data = this.readFile(fileName)
       const ext = fileName.split('.').pop()
       if (ext !== 'md') {
         let lines = data.split('\n')

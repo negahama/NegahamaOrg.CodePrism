@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 import { parse } from 'path'
 
-import { PrismFileManager } from './PrismFileManager'
+import { PrismFileSystem } from './PrismFileManager'
 
 // [concept](/doc/concept.md) 참고
 // [linker](/doc/linker.md) 참고
@@ -269,7 +269,7 @@ export async function linkdetector_activate(context: vscode.ExtensionContext) {
             const encodedArgs = encodeURIComponent(JSON.stringify(args))
             const openCommandUri = vscode.Uri.parse(`command:${commandId}?${encodedArgs}`)
             // <div> 태그에서 보면 \n이 사용되는데 이건 # title로 시작하는 markdown을 인식되게 하기 위한 것이다.
-            markdown = `[${linkTitle}](${openCommandUri}) <div>\n${PrismFileManager.getDocContent(
+            markdown = `[${linkTitle}](${openCommandUri}) <div>\n${PrismFileSystem.getDocContent(
               result.fileName
             )}</div>`
           } else {
@@ -284,7 +284,7 @@ export async function linkdetector_activate(context: vscode.ExtensionContext) {
             })
             const link = /*uri.toString()*/ `file:///${result.fileName}#${result.fragment}`
 
-            markdown = `[${linkTitle}](${link}) <div>\n${PrismFileManager.getDocContent(result.fileName)}</div>`
+            markdown = `[${linkTitle}](${link}) <div>\n${PrismFileSystem.getDocContent(result.fileName)}</div>`
           }
 
           const markdownString = new vscode.MarkdownString(markdown)

@@ -45,7 +45,7 @@
       {
         "category": "Code Prism",
         "command": "CodePrism.command.issue.addByContext",
-        "title": "Add new issue",
+        "title": "Add Issue",
         "icon": "$(add)"
       },
       {
@@ -178,6 +178,11 @@
       },
       {
         "category": "Code Prism",
+        "command": "CodePrism.command.CopyCodeAnchorLink",
+        "title": "Copy code-anchor Link"
+      },
+      {
+        "category": "Code Prism",
         "command": "CodePrism.command.OpenRelativeDoc",
         "title": "Show Document Preview"
       }
@@ -228,10 +233,6 @@
         },
         {
           "command": "CodePrism.command.prismFile.delete",
-          "when": "false"
-        },
-        {
-          "command": "CodePrism.command.issue.addByContext",
           "when": "false"
         },
         {
@@ -390,6 +391,10 @@
           "when": "editorTextFocus"
         },
         {
+          "command": "CodePrism.command.CopyCodeAnchorLink",
+          "when": "editorTextFocus"
+        },
+        {
           "command": "CodePrism.command.OpenRelativeDoc",
           "when": "editorTextFocus"
         }
@@ -459,6 +464,20 @@
         }
       ]
     },
+    "keybindings": [
+      {
+        "command": "CodePrism.command.issue.addByContext",
+        "key": "ctrl+alt+c ctrl+alt+i",
+        "mac": "cmd+alt+c cmd+alt+i",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "CodePrism.command.CopyCodeAnchorLink",
+        "key": "ctrl+alt+c ctrl+alt+c",
+        "mac": "cmd+alt+c cmd+alt+c",
+        "when": "editorTextFocus"
+      }
+    ],
     "configuration": [
       {
         "type": "object",

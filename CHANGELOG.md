@@ -6,11 +6,18 @@ All notable changes to the "Code Prism" extension will be documented in this fil
 
 ### 1.3.2 - November 7, 2024
 
-bug fix
+bugs fix
 
 - fixed the bug that don't delete comments when the prism file is deleted
 - fixed the bug that don't append new issue when prism tree view is list mode
 - fixed the bug that don't change the category when prism tree view is list mode
+
+add functions
+
+- key binding
+- copy code-anchor link
+  this function is useful when you want to link code's specific part.
+  you can use it by context menu and pressing Ctrl+Alt+C Ctrl+Alt+C
 
 ### 1.3.1 - November 6, 2024
 

@@ -1,10 +1,52 @@
 import * as vscode from 'vscode'
 import path from 'path'
 
-import { Prism, Issue, Note } from './Prism'
+import { Prism, Issue } from './Prism'
 import { PrismManager } from './PrismManager'
-import { PrismFileManager } from './PrismFileManager'
+import { PrismFileSystem, PrismPath } from './PrismFileManager'
 import { marked } from 'marked'
+
+export class PrismWebviewPanel {
+  private panel: vscode.WebviewPanel
+
+  constructor(
+    id: string,
+    title: string,
+    column: vscode.ViewColumn,
+    content?: string,
+    messageListener?: (message: any) => void,
+    disposeListener?: () => void
+  ) {
+    this.panel = vscode.window.createWebviewPanel(id, title, column, {
+      enableScripts: true,
+      retainContextWhenHidden: true,
+    })
+
+    if (content) {
+      this.panel.webview.html = content
+    }
+
+    // 웹뷰에 메시지 핸들러 추가
+    if (messageListener) {
+      this.panel.webview.onDidReceiveMessage(messageListener)
+    }
+
+    if (disposeListener) {
+      this.panel.onDidDispose(disposeListener)
+    }
+
+    // 웹뷰에 포커스를 맞춘다.
+    this.panel.reveal(column)
+  }
+
+  updateContent(content: string) {
+    this.panel.webview.html = content
+  }
+
+  postMessage(message: any) {
+    this.panel.webview.postMessage(message)
+  }
+}
 
 /**
  * The `PrismViewer` class provides methods to display and interact with Prism files and their issues within a VS Code environment.
@@ -32,7 +74,7 @@ import { marked } from 'marked'
  */
 export class PrismViewer {
   static prism: Prism
-  static panel: vscode.WebviewPanel
+  static panel: PrismWebviewPanel
 
   /**
    * Displays a Prism file in a webview panel. If a issue is provided, it opens the source file
@@ -70,24 +112,15 @@ export class PrismViewer {
 
       // 웹뷰를 생성하고 HTML을 로드한다.
       // 이 뷰가 최종적으로 active되는게 좋으므로 가장 마지막에 호출한다.
-      this.panel = vscode.window.createWebviewPanel(
+      this.panel = new PrismWebviewPanel(
         'code-prism-view',
         `CodePrism:${prism.name}`,
         vscode.ViewColumn.One,
-        {
-          enableScripts: true,
-          retainContextWhenHidden: true,
+        this.getWebviewContent(prism),
+        (message: any) => {
+          this.onReceiveMessage(message)
         }
       )
-      this.panel.webview.html = this.getWebviewContent(prism)
-
-      // 웹뷰에 메시지 핸들러 추가
-      this.panel.webview.onDidReceiveMessage(message => {
-        this.onReceiveMessage(message)
-      })
-
-      // 웹뷰에 포커스를 맞춘다.
-      this.panel.reveal(vscode.ViewColumn.One)
     } else {
       // IssueItem을 클릭했을 때
       // 해당 소스파일을 열고, 해당 노트의 위치로 이동한다.
@@ -105,7 +138,7 @@ export class PrismViewer {
    */
   static openPrismFile(prism: Prism) {
     // sample.prism.json 파일을 그대로 표시한다.
-    if (!PrismFileManager.isPrismFileExists(prism.name)) {
+    if (!PrismFileSystem.isPrismFileExists(prism.name)) {
       vscode.window.showWarningMessage('The prism does not exist.')
       return
     }
@@ -118,7 +151,7 @@ export class PrismViewer {
     // vscode.workspace.openTextDocument(uri).then(document => {
     //   vscode.window.showTextDocument(document, vscode.ViewColumn.Two)
     // })
-    const prismJsonPath = PrismFileManager.getPrismFilePath(prism.name)
+    const prismJsonPath = PrismPath.getPrismFilePath(prism.name)
     vscode.workspace.openTextDocument(prismJsonPath).then(document => {
       vscode.window.showTextDocument(document, vscode.ViewColumn.Two)
     })
@@ -143,7 +176,7 @@ export class PrismViewer {
    * @param issue - The `Issue` object containing the source file path and selection range.
    */
   static openSourceFile(issue: Issue) {
-    const uri = vscode.Uri.file(PrismFileManager.getWorkspacePath() + issue.source.file)
+    const uri = vscode.Uri.file(PrismPath.getWorkspacePath() + issue.source.file)
     const selection = new vscode.Selection(
       new vscode.Position(issue.source.startLine - 1, issue.source.startColumn),
       new vscode.Position(issue.source.endLine - 1, issue.source.endColumn)
@@ -183,7 +216,7 @@ export class PrismViewer {
     }
 
     // 상대 경로를 절대 경로로 변환
-    const absolutePath = path.join(PrismFileManager.getPrismFolderPath(), 'docs', relativePath!)
+    const absolutePath = path.join(PrismPath.getPrismFolderPath(), 'docs', relativePath!)
 
     // // markdown.showPreview를 사용하여 마크다운 파일을 미리보기 창에 열기
     // const docu_file_uri = vscode.Uri.file(absolutePath)
@@ -247,14 +280,14 @@ export class PrismViewer {
    */
   static getArticle(): string {
     const getIssue = (issue: Issue) => {
-      const sourcePath = (PrismFileManager.getWorkspacePath() + issue.source.file).replace(/\\/g, '/')
+      const sourcePath = (PrismPath.getWorkspacePath() + issue.source.file).replace(/\\/g, '/')
       // const sourceLink: string = `<a href="file:///${sourcePath}">` + sourcePath + '</a>'
       // prettier-ignore
       return `
         <h2>Issue: '${issue.title}'</h2>
         ${issue.source ? `<p>Source: ${sourcePath}(line: ${issue.source.startLine})</p>` : '<p>Source: N/A</p>'}
         ${issue.notes.map(note => {
-          const safeId = `'${note.id}'` //encodeURIComponent(desc.id).substring(0, 8)
+          const safeId = `'${note.id}'` //encodeURIComponent(note.id).substring(0, 8)
           return `
             <div class="note" id="note-${note.id}">
               <h3>Note : ${safeId}</h3>
@@ -346,7 +379,7 @@ export class PrismViewer {
 
   static onReceiveMessage(message: any) {
     const result = PrismManager.findPrismIssueNoteByNoteId(message.id)
-    if (!result || result.prism !== this.prism) {
+    if (!result) {
       return
     }
 
@@ -354,6 +387,7 @@ export class PrismViewer {
       case 'appendNote':
         vscode.window.showInformationMessage(message.command + `: ${message.id}`)
         this.prism.issues.filter(issue => issue.id !== message.id)
+        //todo: note를 추가한다.
         break
       case 'removeNote':
         // prism 파일 자체를 업데이트한다.
@@ -361,15 +395,12 @@ export class PrismViewer {
         vscode.window.showInformationMessage(message.command + `: found-${result.note.id}`)
         this.prism.removeNote(result.issue.id, message.id)
         PrismManager.updatePrism(this.prism)
-
-        // PrismFileProvider를 update한다.
-        // CommentController를 update한다.
         break
       case 'createOrOpenLink':
         // markdown 파일을 생성하거나 열어서 보여준다.
         vscode.window.showInformationMessage(message.command + `: ${message.id}`)
         // PrismManager.createMarkdownFile()는 파일이 이미 있으면 생성하지 않고 false를 리턴한다.
-        const exist = !PrismFileManager.createMarkdownFile(message.id, this.prism, result.issue)
+        const exist = !PrismFileSystem.createMarkdownFile(message.id, this.prism, result.issue)
         if (!exist) {
           // 파일이 새로 생성되었을 경우에는 note의 link를 업데이트한다.
           if (result.note) {
@@ -377,7 +408,7 @@ export class PrismViewer {
             this.prism.updateNote(result.issue.id, { link, ...result.note })
             PrismManager.updatePrism(this.prism)
 
-            this.panel.webview.html = this.getWebviewContent(this.prism)
+            this.panel.updateContent(this.getWebviewContent(this.prism))
           }
         }
         this.openMarkdownFile(message.id)

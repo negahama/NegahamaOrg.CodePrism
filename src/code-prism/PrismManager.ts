@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
 import { Note, Issue, Prism } from './Prism'
-import { PrismFileManager } from './PrismFileManager'
+import { PrismFileSystem, PrismPath } from './PrismFileManager'
 
 export type Callback<T> = (data: T) => void
 
@@ -68,7 +68,7 @@ export class PubSub<T> {
  *
  * @property {Prism} [prism] - Optional prism object associated with the subscription.
  * @property {Issue} [issue] - Optional issue object associated with the subscription.
- * @property {Note} [desc] - Optional note object associated with the subscription.
+ * @property {Note} [note] - Optional note object associated with the subscription.
  */
 export interface SubscribeType {
   prism?: Prism
@@ -161,7 +161,7 @@ export class PrismManager {
    */
   static createPrismFromFile(file: string): Prism {
     // 파일을 읽어 텍스트로 변환
-    const text = PrismFileManager.readFile(file)
+    const text = PrismFileSystem.readFile(file)
 
     // 텍스트를 JSON 객체로 파싱
     const json = JSON.parse(text)
@@ -206,7 +206,7 @@ export class PrismManager {
    */
   static async loadPrismFiles(): Promise<Prism[]> {
     this.prisms = []
-    const files = await PrismFileManager.getPrismFileNames()
+    const files = await PrismFileSystem.getPrismFileNames()
     files.forEach(file => {
       this.prisms.push(this.createPrismFromFile(file))
     })
@@ -231,7 +231,7 @@ export class PrismManager {
   static createPrismAndFile(name: string): Prism {
     const prism = this.createPrism(name)
 
-    PrismFileManager.createPrismFile(prism)
+    PrismFileSystem.createPrismFile(prism)
 
     this.prisms.push(prism)
     this.publish('create-prism', { prism })
@@ -249,7 +249,7 @@ export class PrismManager {
   static updatePrism(prism: Prism): boolean {
     const found = this.prisms.find(p => p.name === prism.name)
     if (found) {
-      PrismFileManager.savePrismFile(prism)
+      PrismFileSystem.savePrismFile(prism)
       return true
     }
     return false
@@ -265,7 +265,12 @@ export class PrismManager {
    * @returns A promise that resolves when the file has been deleted.
    */
   static async deletePrism(prism: Prism): Promise<void> {
-    await PrismFileManager.deletePrismFile(prism.name)
+    if (!PrismFileSystem.isPrismFileExists(prism.name)) {
+      vscode.window.showWarningMessage('The prism does not exist.')
+      return
+    }
+
+    await PrismFileSystem.deletePrismFile(prism.name)
 
     const deletingPrism = this.prisms.find(p => p.name === prism.name)
     if (deletingPrism) {
@@ -305,5 +310,40 @@ export class PrismManager {
     }
     console.error('error in findPrismIssueNoteByNoteId: noteId is', noteId)
     return undefined
+  }
+
+  /**
+   * Retrieves the title and range of the selected text in the given editor.
+   *
+   * If the selection is empty, it will get the word at the cursor position or the entire line if no word is found.
+   * If the selection spans multiple lines, it assumes the top line contains the function name.
+   *
+   * @param editor - The text editor from which to retrieve the title and range.
+   * @returns An object containing the title (text) and the range of the selected text.
+   */
+  static getTitleRangePath(editor: vscode.TextEditor): { title: string; range: vscode.Range; path: string } {
+    let range: vscode.Range | undefined
+    if (editor.selection.isEmpty) {
+      const position = editor.selection.active
+      range = editor.document.getWordRangeAtPosition(position)
+      if (!range) {
+        const line = editor.selection.active.line
+        range = editor.document.lineAt(line).range
+      }
+    } else {
+      range = editor.selection
+    }
+
+    let title = ''
+    if (range.end.line !== range.start.line) {
+      // Suppose the top line in multiple lines selection is function name
+      title = editor.document.getText(editor.document.lineAt(range.start.line).range)
+    } else {
+      title = editor.document.getText(range)
+    }
+
+    const path = PrismPath.getRelativePath(editor.document.uri.fsPath)
+
+    return { title, range, path }
   }
 }
