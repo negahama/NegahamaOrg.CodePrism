@@ -329,23 +329,17 @@ export class PrismCommentController {
     }
 
     // context menu에서 issue를 추가할 때는 이미 issue가 있는지를 title말고 다른 것으로는 알 방법이 없다.
-    // issue가 없으면 새로 만든다.
-    let isNewIssue = false
+    const note = Prism.getDefaultNote()
     let issue = prism.getIssueByTitle(title)
     if (!issue) {
-      // issue를 만들고 note를 추가한 다음에 issue를 추가해야 한다.
+      // issue가 없으면 새로 만든다.
+      // issue를 만들고 note를 추가한 다음에 appendIssue를 호출해야 한다.
+      // issue가 새로 만들어진 경우에는 append-issue만 발생시킨다.
       issue = this.createIssueDetails(title, source, range)
-      isNewIssue = true
-    }
-
-    // 주석 추가
-    const note = Prism.getDefaultNote()
-
-    // issue가 새로 만들어진 경우에는 append-issue만 발생시킨다.
-    if (isNewIssue) {
       issue.notes.push(note)
       prism.appendIssue(issue)
     } else {
+      // issue가 있으면 default note만 추가
       prism.appendNote(issue.id, note)
     }
     PrismManager.updatePrism(prism)
@@ -512,23 +506,16 @@ export class PrismCommentController {
 
     const title = await this.getThreadTitle(reply.thread)
 
-    // issue가 없으면 새로 만든다.
-    let isNewIssue = false
     let issue = prism.getIssueByTitle(title)
     if (!issue) {
-      // issue를 만들고 note를 추가한 다음에 issue를 추가해야 한다.
-      // 만들면서 추가되면 여기서 설정하지 않는 값들 특히 note등이 설정되지 않은 상태에서 append-issue가 처리되는 문제점이 있다.
+      // issue가 없으면 새로 만든다.
       issue = this.createIssueDetails(title, source, reply.thread.range)
-      isNewIssue = true
-    }
 
-    if (isNewThread) {
       reply.thread.label = title
       reply.thread.contextValue = issue.id
-    }
 
-    // issue가 새로 만들어진 경우에는 append-issue만 발생시킨다.
-    if (isNewIssue) {
+      // issue를 만들고 note를 추가한 다음에 appendIssue를 호출해야 한다.
+      // issue가 새로 만들어진 경우에는 append-issue만 발생시킨다.
       issue.notes.push(note)
       prism.appendIssue(issue)
     } else {

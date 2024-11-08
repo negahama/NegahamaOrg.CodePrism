@@ -4,6 +4,10 @@ All notable changes to the "Code Prism" extension will be documented in this fil
 
 <!-- ### version - Month day, year -->
 
+### 1.3.3 - November 8, 2024
+
+changed url of screen shot images
+
 ### 1.3.2 - November 7, 2024
 
 bugs fix

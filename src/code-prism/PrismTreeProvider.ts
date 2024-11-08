@@ -338,6 +338,7 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<PrismTreeViewE
           vscode.window.showWarningMessage('append-issue: No exist data.prism')
           this.reload()
         } else {
+          // tree view mode에서는 issue를 별도로 추가할 필요가 없다.
           // issue가 추가, 삭제되면 PrismItem의 `has # issues`메시지도 갱신되어야 한다.
           this.updatePrismItem(data.prism)
         }
@@ -479,12 +480,29 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<PrismTreeViewE
   }
 
   /**
+   * Finds a PrismItem in the list of items that matches the given Prism.
+   *
+   * @param prism - The Prism object to match against.
+   * @returns The matching PrismItem if found, otherwise undefined.
+   */
+  findPrismItem(prism: Prism): PrismItem | undefined {
+    return this.items.find(item => item instanceof PrismItem && item.prism.name === prism.name) as PrismItem
+  }
+
+  /**
    * Appends a new PrismItem to the items array.
    *
    * @param prism - The Prism object to be converted into a PrismItem and appended.
    */
   appendPrismItem(prism: Prism) {
+    // list view mode에서는 PrismItem 자체가 표시되지 않기 때문에 그냥 리턴한다.
     if (this.viewMode === 'list') {
+      return
+    }
+
+    // 동일한 이름의 PrismItem이 이미 있는 경우는 추가하지 않는다.
+    if (this.findPrismItem(prism)) {
+      console.warn('appendPrismItem: already exist', prism.name)
       return
     }
 
@@ -498,11 +516,18 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<PrismTreeViewE
    * @param name - The label of the item to be deleted.
    */
   deletePrismItem(prism: Prism) {
+    // list view mode에서는 PrismItem 자체가 표시되지 않기 때문에 그냥 리턴한다.
     if (this.viewMode === 'list') {
       return
     }
 
-    this.items = this.items.filter(item => item.label !== prism.name)
+    // 동일한 이름의 PrismItem이 없는 경우를 확인한다.
+    if (!this.findPrismItem(prism)) {
+      console.warn('deletePrismItem: no exist', prism.name)
+      return
+    }
+
+    this.items = this.items.filter(item => item.prism.name !== prism.name)
     this.refreshPrismView()
   }
 
@@ -516,15 +541,33 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<PrismTreeViewE
    * @param prism - The prism object to be updated.
    */
   updatePrismItem(prism: Prism) {
+    // list view mode에서는 PrismItem 자체가 표시되지 않기 때문에 그냥 리턴한다.
     if (this.viewMode === 'list') {
       return
     }
 
-    const prismItem = this.items.find(item => item instanceof PrismItem && item.prism === prism)
-    if (prismItem) {
-      PrismItem.refreshItem(prismItem)
-      this.refreshPrismView(prismItem)
+    // prism에서 변경되어질만한 것은 issue의 추가, 삭제 뿐이다.
+    // issue의 추가, 삭제는 append-issue, remove-issue에서 처리되므로
+    // 여기서는 PrismItem이 표시하고 있는 issue 개수만 반영하면 된다.
+    const prismItem = this.findPrismItem(prism)
+    if (!prismItem) {
+      console.warn('updatePrismItem: no exist', prism.name)
+      return
     }
+
+    PrismItem.refreshItem(prismItem)
+    this.refreshPrismView(prismItem)
+  }
+
+  /**
+   * Finds an `IssueItem` in the `Prism` tree that matches the given `issue`.
+   *
+   * @param prism - The `Prism` instance to search within.
+   * @param issue - The `Issue` to find the corresponding `IssueItem` for.
+   * @returns The `IssueItem` that matches the given `issue`, or `undefined` if no match is found.
+   */
+  findIssueItem(prism: Prism, issue: Issue): IssueItem | undefined {
+    return this.items.find(item => item instanceof IssueItem && item.issue.id === issue.id) as IssueItem
   }
 
   /**
@@ -540,6 +583,12 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<PrismTreeViewE
       return
     }
 
+    // 동일한 ID의 IssueItem이 이미 있는 경우는 추가하지 않는다.
+    if (this.findIssueItem(prism, issue)) {
+      console.warn('appendIssueItem: already exist', issue.id)
+      return
+    }
+
     this.items.push(new IssueItem(prism, issue))
     this.refreshPrismView()
   }
@@ -551,6 +600,12 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<PrismTreeViewE
    */
   deleteIssueItem(prism: Prism, issue: Issue) {
     if (this.viewMode === 'tree') {
+      return
+    }
+
+    // 동일한 ID의 IssueItem이 없는 경우를 확인한다.
+    if (!this.findIssueItem(prism, issue)) {
+      console.warn('deleteIssueItem: no exist', issue.id)
       return
     }
 
@@ -570,11 +625,15 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<PrismTreeViewE
     if (this.viewMode === 'tree') {
       this.refreshPrismView()
     } else {
-      const issueItem = this.items.find(item => item instanceof IssueItem && item.issue.id === issue.id)
-      if (issueItem) {
-        IssueItem.refreshItem(issueItem as IssueItem)
-        this.refreshPrismView(issueItem)
+      // 동일한 ID의 IssueItem이 없는 경우를 확인한다.
+      const issueItem = this.findIssueItem(prism, issue)
+      if (!issueItem) {
+        console.warn('updateIssueItem: no exist', issue.id)
+        return
       }
+
+      IssueItem.refreshItem(issueItem)
+      this.refreshPrismView(issueItem)
     }
   }
 }

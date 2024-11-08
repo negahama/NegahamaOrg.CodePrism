@@ -14,7 +14,7 @@ Code Prism is basically a code review program. but it's simple to use and includ
 
 **_Enjoy!_**
 
-![demo](./assets/code-prism-demo.gif)
+![demo](https://github.com/negahama/NegahamaOrg.CodePrism/blob/main/images/code-prism-demo.gif?raw=true)
 
 ## Getting Started
 
@@ -55,7 +55,7 @@ Code Prism is consist of 3 parts
 
 - Manage information associated with a specific part of the document without changing the source.
 
-![screen shot](./assets/Screenshot181558.png)
+![screen shot](https://github.com/negahama/NegahamaOrg.CodePrism/blob/main/images/Screenshot181558.png?raw=true)
 
 #### Prism file
 
@@ -75,13 +75,17 @@ The prism file and the document correspond one-to-one, and one prism file may co
 - Language independent. Works in any language that supports hovers.
 - Supports syntax highlighting and markdown rendering in the docs view.
 
-![screen shot](./assets/Screenshot211953.png)
+![screen shot](https://github.com/negahama/NegahamaOrg.CodePrism/blob/main/images/Screenshot211953.png?raw=true)
 
 ### link documents
 
-![screen shot](./assets/Screenshot182825.png)
+![screen shot](https://github.com/negahama/NegahamaOrg.CodePrism/blob/main/images/Screenshot182825.png?raw=true)
 
 ## 🔗 Release Notes
+
+### 1.3.3 - November 8, 2024
+
+changed url of screen shot images
 
 ### 1.3.2 - November 7, 2024
 

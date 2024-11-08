@@ -142,9 +142,11 @@ export class Prism {
   }
 
   /**
-   * Adds a issue to the list of issues.
+   * Appends an issue to the list of issues if it does not already exist.
+   * If the issue already exists, it returns the existing issue.
    *
-   * @param issue - The issue to be added.
+   * @param issue - The issue to be appended.
+   * @returns The appended issue or the existing issue if it already exists.
    */
   appendIssue(issue: Issue): Issue {
     const exist = this.getIssue(issue.id)
