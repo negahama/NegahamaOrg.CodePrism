@@ -4,9 +4,8 @@ import * as fs from 'fs'
 
 import { Issue, Prism } from './Prism'
 
-export const PRISM_FOLDER_NAME = '.prism'
-export const PRISM_DOCS_FOLDER_NAME = 'docs'
-export const PRISM_FILE_EXT = 'prism.json'
+const PRISM_FOLDER_NAME = '.prism'
+const PRISM_FILE_EXT = 'prism.json'
 
 /**
  * The `PrismPath` class provides utility methods to retrieve various paths related to the Prism folder within the current workspace.
@@ -57,11 +56,33 @@ export namespace PrismPath {
   }
 
   /**
+   * Generates the full file path for a given prism file name.
+   *
+   * @param name - The name of the prism file without extension.
+   * @returns The full file path including the prism folder path and file extension.
+   */
+  export function getPrismFilePath(name: string): string {
+    return path.join(getPrismFolderPath(), `${name}.${PRISM_FILE_EXT}`)
+  }
+
+  /**
+   * Computes the relative path from the workspace path to the given file path.
+   *
+   * @param filePath - The absolute path of the file.
+   * @returns The relative path from the workspace path to the given file path.
+   */
+  export function getRelativePath(filePath: string): string {
+    return path.relative(getWorkspacePath(), filePath)
+  }
+
+  /**
    * Retrieves the path to the Prism documentation folder.
    *
    * @returns {string} The path to the Prism documentation folder.
    */
   export function getPrismDocsFolderPath(): string {
+    const PRISM_DOCS_FOLDER_NAME = 'docs'
+
     // const root = vscode.Uri.file(this.getPrismFolderPath() ?? '')
 
     // // Initialize the current path to the root
@@ -86,24 +107,8 @@ export namespace PrismPath {
     return path.join(getPrismFolderPath(), PRISM_DOCS_FOLDER_NAME)
   }
 
-  /**
-   * Generates the full file path for a given prism file name.
-   *
-   * @param name - The name of the prism file without extension.
-   * @returns The full file path including the prism folder path and file extension.
-   */
-  export function getPrismFilePath(name: string): string {
-    return path.join(getPrismFolderPath(), `${name}.${PRISM_FILE_EXT}`)
-  }
-
-  /**
-   * Computes the relative path from the workspace path to the given file path.
-   *
-   * @param filePath - The absolute path of the file.
-   * @returns The relative path from the workspace path to the given file path.
-   */
-  export function getRelativePath(filePath: string): string {
-    return path.relative(getWorkspacePath(), filePath)
+  export function getPrismSnippetFolderPath(): string {
+    return path.join(getPrismFolderPath(), 'snippets')
   }
 }
 
@@ -150,7 +155,7 @@ export class PrismFileSystem {
    *
    * This method first checks if the prism folder exists. If it does not exist,
    * it returns an empty array. If the folder exists, it searches for all files
-   * with the `.prism.json` extension within the folder and returns their paths.
+   * with the `PRISM_FILE_EXT` extension within the folder and returns their paths.
    *
    * @returns {Promise<string[]>} A promise that resolves to an array of file paths
    * of the prism files.
@@ -172,7 +177,7 @@ export class PrismFileSystem {
     // return fs.readdirSync(prismFolderPath).filter(name => name.endsWith(PRISM_FILE_EXT))
 
     let folderName = PrismPath.getPrismFolderName()
-    let files = await vscode.workspace.findFiles(`**/${folderName}/*.prism.json`, null, 500)
+    let files = await vscode.workspace.findFiles(`**/${folderName}/*.${PRISM_FILE_EXT}`, null, 500)
     return files.map(file => file.fsPath)
   }
 
@@ -295,6 +300,33 @@ export class PrismFileSystem {
   }
 
   /**
+   * Creates a new file with the specified contents in the Prism documentation folder.
+   * If the file already exists, the function returns false.
+   *
+   * @param fileName - The name of the file to be created.
+   * @param contents - The contents to be written to the file.
+   * @returns A promise that resolves to a boolean indicating whether the file was successfully created.
+   */
+  static createFile(fileName: string, contents: string): boolean {
+    if (fs.existsSync(fileName)) {
+      return false
+    }
+
+    const dirPath = path.dirname(fileName)
+    if (!fs.existsSync(dirPath)) {
+      fs.mkdirSync(dirPath, { recursive: true })
+    }
+
+    try {
+      fs.writeFileSync(fileName, contents)
+      return true
+    } catch (err) {
+      console.error(err)
+    }
+    return false
+  }
+
+  /**
    * Reads the content of a file synchronously.
    *
    * @param fileName - The path to the file to be read.
@@ -318,36 +350,45 @@ export class PrismFileSystem {
    * markdown 문서가 아니면 코드로 표시한다.
    *
    * @param fileName - The name of the file to read content from.
-   * @returns A string containing the formatted content of the file. If the file has more than 10 lines,
-   *          only the first 10 lines are included followed by a '`... <more>`' indicator. If the file
+   * @returns A string containing the formatted content of the file. If the file has more than `lineLimit` lines,
+   *          only the first `lineLimit` lines are included followed by a '`... <more>`' indicator. If the file
    *          extension is not 'md', the content is wrapped in code block markers.
    * @throws Will log an error to the console if there is an issue reading the file.
    */
-  static getDocContent(fileName: string): string {
+  static getDocContent(fileName: string, lineLimit: number = 10): string {
     let content: string = '# No content'
     try {
-      const data = this.readFile(fileName)
+      content = this.readFile(fileName)
+
+      let isMore = false
       const ext = fileName.split('.').pop()
       if (ext !== 'md') {
-        let lines = data.split('\n')
-        if (lines.length > 10) {
-          lines = lines.slice(0, 10)
-        }
-        content = lines.join('\n')
-        content = '\n```\n' + content + '\n```\n'
-        content += '\n`... <more>`'
-      } else {
-        // markdown의 경우에는 문서 일부만 표시할 경우 ``` 이 닫혔는지 여부를 확인해야 한다.
-        let lines = data.split('\n')
-        if (lines.length > 10) {
-          lines = lines.slice(0, 10)
-          const backtickCount = lines.filter(line => line.includes('```')).length
-          if (backtickCount % 2 === 1) {
-            lines.push('```')
+        if (lineLimit !== -1) {
+          let lines = content.split('\n')
+          if (lines.length > lineLimit) {
+            lines = lines.slice(0, lineLimit)
+            isMore = true
           }
-          lines.push('\n`... <more>`')
+          content = lines.join('\n')
         }
-        content = lines.join('\n')
+        content = '\n```\n' + content + '\n```\n'
+      } else {
+        if (lineLimit === -1) {
+          // markdown의 경우에는 문서 일부만 표시할 경우 ``` 이 닫혔는지 여부를 확인해야 한다.
+          let lines = content.split('\n')
+          if (lines.length > lineLimit) {
+            lines = lines.slice(0, lineLimit)
+            const backtickCount = lines.filter(line => line.includes('```')).length
+            if (backtickCount % 2 === 1) {
+              lines.push('```')
+            }
+            isMore = true
+          }
+          content = lines.join('\n')
+        }
+      }
+      if (isMore) {
+        content += '\n`... <more>`'
       }
     } catch (error) {
       console.error(error)

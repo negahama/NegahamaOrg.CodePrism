@@ -312,13 +312,11 @@ export class PrismCommentController {
       return
     }
 
-    const result = PrismManager.getTitleRangePath(editor)
+    const { code, range, path: path2 } = PrismManager.getCodeWithRangeAndPath(editor)
 
-    let title = result.title
-    const range = result.range
-
+    let title = code.split('\n')[0]
     title = '`' + title.trim() + '`'
-    title += ` at ${result.path}#${range.start.line + 1}`
+    title += ` at ${path2}#${range.start.line + 1}`
     title = title.trim()
 
     // prism이 없으면 새로 만든다.

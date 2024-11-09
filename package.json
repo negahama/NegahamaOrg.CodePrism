@@ -183,6 +183,11 @@
       },
       {
         "category": "Code Prism",
+        "command": "CodePrism.command.CopyOnePlusOneLink",
+        "title": "Copy 1 + 1 Link"
+      },
+      {
+        "category": "Code Prism",
         "command": "CodePrism.command.OpenRelativeDoc",
         "title": "Show Document Preview"
       }
@@ -395,6 +400,10 @@
           "when": "editorTextFocus"
         },
         {
+          "command": "CodePrism.command.CopyOnePlusOneLink",
+          "when": "editorTextFocus"
+        },
+        {
           "command": "CodePrism.command.OpenRelativeDoc",
           "when": "editorTextFocus"
         }
@@ -475,6 +484,12 @@
         "command": "CodePrism.command.CopyCodeAnchorLink",
         "key": "ctrl+alt+c ctrl+alt+c",
         "mac": "cmd+alt+c cmd+alt+c",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "CodePrism.command.CopyOnePlusOneLink",
+        "key": "ctrl+alt+c ctrl+alt+1",
+        "mac": "cmd+alt+c cmd+alt+1",
         "when": "editorTextFocus"
       }
     ],

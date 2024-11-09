@@ -15,6 +15,8 @@ interface LinkInfo {
   fragment: string
 }
 
+const linkPattern = /\[[^\]]+\]\([^\)]+\)/g
+
 /**
  * Converts markdown-style links in the given text to absolute paths.
  *
@@ -26,8 +28,6 @@ interface LinkInfo {
  */
 export function convertLink(text: string) {
   // text에서 [description](path) 형식의 링크를 찾아 절대 경로로 변환한 후 반환한다.
-  const linkPattern = /\[[^\]]+\]\([^\)]+\)/g
-
   let match
   while ((match = linkPattern.exec(text))) {
     const linkInfo = parseLink(match[0], '')
@@ -125,8 +125,6 @@ export function parseLink(text: string, documentPath: string): LinkInfo | null {
  * @param context - The extension context provided by VS Code, used to register the providers.
  */
 export async function linkdetector_activate(context: vscode.ExtensionContext) {
-  const linkPattern = /\[[^\]]+\]\([^\)]+\)/g
-
   // Create a TextEditorDecorationType that underlines text and changes its color
   const linkDecoration = vscode.window.createTextEditorDecorationType({
     textDecoration: 'underline',

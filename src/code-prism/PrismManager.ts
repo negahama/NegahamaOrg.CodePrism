@@ -321,7 +321,7 @@ export class PrismManager {
    * @param editor - The text editor from which to retrieve the title and range.
    * @returns An object containing the title (text) and the range of the selected text.
    */
-  static getTitleRangePath(editor: vscode.TextEditor): { title: string; range: vscode.Range; path: string } {
+  static getCodeWithRangeAndPath(editor: vscode.TextEditor): { code: string; range: vscode.Range; path: string } {
     let range: vscode.Range | undefined
     if (editor.selection.isEmpty) {
       const position = editor.selection.active
@@ -334,16 +334,9 @@ export class PrismManager {
       range = editor.selection
     }
 
-    let title = ''
-    if (range.end.line !== range.start.line) {
-      // Suppose the top line in multiple lines selection is function name
-      title = editor.document.getText(editor.document.lineAt(range.start.line).range)
-    } else {
-      title = editor.document.getText(range)
-    }
-
+    const code = editor.document.getText(range)
     const path = PrismPath.getRelativePath(editor.document.uri.fsPath)
 
-    return { title, range, path }
+    return { code, range, path }
   }
 }
