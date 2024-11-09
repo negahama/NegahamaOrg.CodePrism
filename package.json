@@ -193,6 +193,16 @@
       },
       {
         "category": "Code Prism",
+        "command": "CodePrism.command.findReferences",
+        "title": "Find All References with Search Editor"
+      },
+      {
+        "category": "Code Prism",
+        "command": "CodePrism.command.findImplementations",
+        "title": "Find All Implementations with Search Editor"
+      },
+      {
+        "category": "Code Prism",
         "command": "CodePrism.command.GenRefDiagram",
         "title": "Generate Mermaid Diagram for All Reference"
       }

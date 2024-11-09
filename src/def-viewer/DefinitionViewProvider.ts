@@ -139,7 +139,7 @@ export class DefinitionViewProvider implements vscode.WebviewViewProvider {
     {
       id: 'findAllReference(SearchEditor)',
       label: 'Open Search Editor',
-      vscodeCommand: 'references-view.findReferences',
+      vscodeCommand: 'CodePrism.command.findReferences',
     },
     {
       id: 'findAllReference(GenerateDiagram)',
@@ -154,7 +154,7 @@ export class DefinitionViewProvider implements vscode.WebviewViewProvider {
     {
       id: 'findAllImplement(SearchEditor)',
       label: 'Open Search Editor',
-      vscodeCommand: 'references-view.findImplementations',
+      vscodeCommand: 'CodePrism.command.findImplementations',
     },
     {
       id: 'showCallHierarchy(ReferenceView)',
@@ -271,7 +271,7 @@ export class DefinitionViewProvider implements vscode.WebviewViewProvider {
           'findAllReference(GenerateDiagram)',
         ],
       },
-      { group: 'Find All Implement', commands: ['findAllImplement(ReferenceView)'] },
+      { group: 'Find All Implement', commands: ['findAllImplement(ReferenceView)', 'findAllImplement(SearchEditor)'] },
       { group: 'Show Call Hierarchy', commands: ['showCallHierarchy(ReferenceView)'] },
       { group: 'Find In Files', commands: ['findInFiles(SearchView)', 'findInFiles(SearchEditor)'] },
     ]

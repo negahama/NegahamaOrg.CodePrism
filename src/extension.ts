@@ -7,10 +7,11 @@ import { prism_activate } from './code-prism/PrismCommands.js'
 import { PrismDocDetector } from './code-prism/PrismDocDetector'
 import { PrismLinkDetector } from './code-prism/PrismLinkDetector'
 import { Prism1Plus1Detector } from './code-prism/Prism1Plus1Detector'
+import { PrismSearchEditor } from './code-prism/PrismSearchEditor'
 import { PrismRefDiagramGenerator } from './code-prism/PrismRefDiagramGenerator'
-import { definition_activate } from './def-viewer/DefinitionViewProvider.js'
-import { mermaid_activate } from './mermaid-viewer/mermaid-viewer.js'
-import { output } from './code-prism/PrismOutputChannel.js'
+import { definition_activate } from './def-viewer/DefinitionViewProvider'
+import { mermaid_activate } from './mermaid-viewer/mermaid-viewer'
+import { output } from './code-prism/PrismOutputChannel'
 // import { createTsAstViewer } from './ast-viewer/TsAstViewerMain.js'
 
 // This method is called when your extension is activated
@@ -24,17 +25,20 @@ export async function activate(context: vscode.ExtensionContext) {
   prism_activate(context)
   output.log('activated prism')
 
+  PrismDocDetector.activate(context)
+  output.log('activated doc-detector')
+
   PrismLinkDetector.activate(context)
   output.log('activated link-detector')
 
   Prism1Plus1Detector.activate(context)
   output.log('activated 1+1-detector')
 
+  PrismSearchEditor.activate(context)
+  output.log('activated prism-search-editor')
+
   PrismRefDiagramGenerator.activate(context)
   output.log('activated ref-diagram generator')
-
-  PrismDocDetector.activate(context)
-  output.log('activated doc-detector')
 
   definition_activate(context)
   output.log('activated definition')
