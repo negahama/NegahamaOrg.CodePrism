@@ -6,29 +6,22 @@
 
   const main = document.getElementById('main')
 
-  document.getElementById('openFindAllReference')?.addEventListener('click', function (event) {
-    event.preventDefault()
-    vscode.postMessage({ command: 'openFindAllReference' })
-  })
+  const commands = [
+    'findAllReference(ReferenceView)',
+    'findAllReference(SearchEditor)',
+    'findAllReference(GenerateDiagram)',
+    'findAllImplement(ReferenceView)',
+    'findAllImplement(SearchEditor)',
+    'showCallHierarchy(ReferenceView)',
+    'findInFiles(SearchView)',
+    'findInFiles(SearchEditor)',
+  ]
 
-  document.getElementById('openFindAllImplement')?.addEventListener('click', function (event) {
-    event.preventDefault()
-    vscode.postMessage({ command: 'openFindAllImplement' })
-  })
-
-  document.getElementById('openShowCallHierarchy')?.addEventListener('click', function (event) {
-    event.preventDefault()
-    vscode.postMessage({ command: 'openShowCallHierarchy' })
-  })
-
-  document.getElementById('openFindInFiles')?.addEventListener('click', function (event) {
-    event.preventDefault()
-    vscode.postMessage({ command: 'openFindInFiles' })
-  })
-
-  document.getElementById('openSearchEditor')?.addEventListener('click', function (event) {
-    event.preventDefault()
-    vscode.postMessage({ command: 'openSearchEditor' })
+  commands.forEach(command => {
+    document.getElementById(command)?.addEventListener('click', function (event) {
+      event.preventDefault()
+      vscode.postMessage({ command })
+    })
   })
 
   // Handle messages sent from the extension to the webview

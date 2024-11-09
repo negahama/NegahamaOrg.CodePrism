@@ -130,6 +130,41 @@ export class DefinitionViewProvider implements vscode.WebviewViewProvider {
     }
   }
 
+  commands: { id: string; label: string; vscodeCommand: string }[] = [
+    {
+      id: 'findAllReference(ReferenceView)',
+      label: 'Open Reference View',
+      vscodeCommand: 'references-view.findReferences',
+    },
+    {
+      id: 'findAllReference(SearchEditor)',
+      label: 'Open Search Editor',
+      vscodeCommand: 'references-view.findReferences',
+    },
+    {
+      id: 'findAllReference(GenerateDiagram)',
+      label: 'Generate mermaid diagram',
+      vscodeCommand: 'CodePrism.command.GenRefDiagram',
+    },
+    {
+      id: 'findAllImplement(ReferenceView)',
+      label: 'Open Reference View',
+      vscodeCommand: 'references-view.findImplementations',
+    },
+    {
+      id: 'findAllImplement(SearchEditor)',
+      label: 'Open Search Editor',
+      vscodeCommand: 'references-view.findImplementations',
+    },
+    {
+      id: 'showCallHierarchy(ReferenceView)',
+      label: 'Open Reference View',
+      vscodeCommand: 'references-view.showCallHierarchy',
+    },
+    { id: 'findInFiles(SearchView)', label: 'Open Find In Files', vscodeCommand: 'workbench.action.findInFiles' },
+    { id: 'findInFiles(SearchEditor)', label: 'Open Search Editor', vscodeCommand: 'search.action.openNewEditor' },
+  ]
+
   /**
    * Resolves the webview view when it becomes visible.
    * resolveWebviewView 메서드는 웹뷰를 생성하고 초기화하는 데 사용됩니다.
@@ -163,22 +198,14 @@ export class DefinitionViewProvider implements vscode.WebviewViewProvider {
         case 'alert':
           vscode.window.showErrorMessage(message.text)
           break
-        case 'openFindAllReference':
-          // text, position 모두 가능하다.
-          vscode.commands.executeCommand('references-view.findReferences')
-          break
-        case 'openFindAllImplement':
-          vscode.commands.executeCommand('references-view.findImplementations')
-          break
-        case 'openShowCallHierarchy':
-          vscode.commands.executeCommand('references-view.showCallHierarchy')
-          break
-        case 'openFindInFiles':
-          vscode.commands.executeCommand('workbench.action.findInFiles')
-          break
-        case 'openSearchEditor':
-          vscode.commands.executeCommand('search.action.openNewEditor')
-          break
+        default: {
+          const command = this.commands.find(c => c.id === message.command)
+          if (!command) {
+            vscode.window.showErrorMessage(`Command not found: ${message.command}`)
+            return
+          }
+          vscode.commands.executeCommand(command.vscodeCommand)
+        }
       }
     })
 
@@ -235,6 +262,37 @@ export class DefinitionViewProvider implements vscode.WebviewViewProvider {
 
     const nonce = getNonce()
 
+    const commandGroups = [
+      {
+        group: 'Find All Reference',
+        commands: [
+          'findAllReference(ReferenceView)',
+          'findAllReference(SearchEditor)',
+          'findAllReference(GenerateDiagram)',
+        ],
+      },
+      { group: 'Find All Implement', commands: ['findAllImplement(ReferenceView)'] },
+      { group: 'Show Call Hierarchy', commands: ['showCallHierarchy(ReferenceView)'] },
+      { group: 'Find In Files', commands: ['findInFiles(SearchView)', 'findInFiles(SearchEditor)'] },
+    ]
+    const listCommands = () => {
+      const list: string[] = []
+      list.push('<div id="menus">')
+      commandGroups.forEach(group => {
+        list.push(`${group.group}<ul>`)
+        group.commands.forEach(commandId => {
+          const command = this.commands.find(c => c.id === commandId)
+          if (!command) {
+            return
+          }
+          list.push(`<li><a href="#" id="${command.id}">${command.label}</a></li>`)
+        })
+        list.push('</ul>')
+      })
+      list.push('</div>')
+      return list.join('')
+    }
+
     return `
       <!DOCTYPE html>
 			<html lang="en">
@@ -253,11 +311,7 @@ export class DefinitionViewProvider implements vscode.WebviewViewProvider {
 			</head>
 			<body>
         <div id="menus"><ul>
-          <li><a href="#" id="openFindAllReference">Find All References</a></li>
-          <li><a href="#" id="openFindAllImplement">Find All Implementations</a></li>
-          <li><a href="#" id="openShowCallHierarchy">Show Call Hierarchy</a></li>
-          <li><a href="#" id="openFindInFiles">Open Find In Files</a></li>
-          <li><a href="#" id="openSearchEditor">Open Search Editor</a></li>
+          ${listCommands()}
         </ul></div>
 				<article id="main"></article>
 				<script nonce="${nonce}" src="${scriptUri}"></script>

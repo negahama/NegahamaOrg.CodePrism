@@ -4,8 +4,13 @@ import * as vscode from 'vscode'
 
 // import { language_model_test } from './language-model-test.js'
 import { prism_activate } from './code-prism/PrismCommands.js'
+import { PrismDocDetector } from './code-prism/PrismDocDetector'
+import { PrismLinkDetector } from './code-prism/PrismLinkDetector'
+import { Prism1Plus1Detector } from './code-prism/Prism1Plus1Detector'
+import { PrismRefDiagramGenerator } from './code-prism/PrismRefDiagramGenerator'
 import { definition_activate } from './def-viewer/DefinitionViewProvider.js'
 import { mermaid_activate } from './mermaid-viewer/mermaid-viewer.js'
+import { output } from './code-prism/PrismOutputChannel.js'
 // import { createTsAstViewer } from './ast-viewer/TsAstViewerMain.js'
 
 // This method is called when your extension is activated
@@ -17,13 +22,25 @@ export async function activate(context: vscode.ExtensionContext) {
   // language_model_test()
 
   prism_activate(context)
-  console.log('activated prism')
+  output.log('activated prism')
+
+  PrismLinkDetector.activate(context)
+  output.log('activated link-detector')
+
+  Prism1Plus1Detector.activate(context)
+  output.log('activated 1+1-detector')
+
+  PrismRefDiagramGenerator.activate(context)
+  output.log('activated ref-diagram generator')
+
+  PrismDocDetector.activate(context)
+  output.log('activated doc-detector')
 
   definition_activate(context)
-  console.log('activated definition')
+  output.log('activated definition')
 
   mermaid_activate(context)
-  console.log('activated mermaid')
+  output.log('activated mermaid')
 
   // createTsAstViewer(context)
   // console.log('createTsAstViewer')

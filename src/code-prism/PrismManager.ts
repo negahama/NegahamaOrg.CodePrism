@@ -1,7 +1,8 @@
 import * as vscode from 'vscode'
 
 import { Note, Issue, Prism } from './Prism'
-import { PrismFileSystem, PrismPath } from './PrismFileManager'
+import { PrismPath } from './PrismPath'
+import { PrismFileSystem } from './PrismFileSystem'
 
 export type Callback<T> = (data: T) => void
 

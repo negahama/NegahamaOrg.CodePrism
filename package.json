@@ -190,6 +190,11 @@
         "category": "Code Prism",
         "command": "CodePrism.command.OpenRelativeDoc",
         "title": "Show Document Preview"
+      },
+      {
+        "category": "Code Prism",
+        "command": "CodePrism.command.GenRefDiagram",
+        "title": "Generate Mermaid Diagram for All Reference"
       }
     ],
     "viewsContainers": {
@@ -318,6 +323,10 @@
         },
         {
           "command": "CodePrism.command.definitionView.unpin",
+          "when": "false"
+        },
+        {
+          "command": "CodePrism.command.GenRefDiagram",
           "when": "false"
         }
       ],

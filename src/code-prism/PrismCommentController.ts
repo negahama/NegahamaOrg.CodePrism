@@ -3,9 +3,10 @@ import * as assert from 'assert'
 import * as path from 'path'
 
 import { Issue, Note, Prism, uuid } from './Prism'
+import { PrismPath } from './PrismPath'
+import { PrismFileSystem } from './PrismFileSystem'
+import { PrismLinkDetector } from './PrismLinkDetector'
 import { PrismManager, SubscribeType } from './PrismManager'
-import { PrismFileSystem, PrismPath } from './PrismFileManager'
-import { convertLink } from './PrismLinkDetector'
 import { output } from './PrismOutputChannel'
 
 /**
@@ -919,7 +920,7 @@ function convertNoteToComment(note: Note, head = false, tail = true): vscode.Mar
     result.push(`- [linked document - ${linkPath}](file:///${link})`)
   }
 
-  return new vscode.MarkdownString(convertLink(result.join('\n')))
+  return new vscode.MarkdownString(PrismLinkDetector.convertLink(result.join('\n')))
 }
 
 /**

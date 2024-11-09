@@ -1,14 +1,11 @@
 import * as vscode from 'vscode'
 import * as path from 'path'
 
-import { Issue, Prism, uuid } from './Prism'
+import { Issue, Prism } from './Prism'
 import { PrismManager } from './PrismManager'
 import { PrismComment, PrismCommentController } from './PrismCommentController'
 import { PrismItem, IssueItem, PrismTreeViewElement, PrismTreeProvider } from './PrismTreeProvider'
-import { PrismViewer } from './PrismViewer'
-import { oneplusone_activate, createCodeSnippetFile } from './Prism1Plus1Detector'
-import { linkdetector_activate } from './PrismLinkDetector'
-import { docdetector_activate } from './PrismDocDetector'
+import { PrismFileViewer } from './PrismFileViewer'
 import { output } from './PrismOutputChannel.js'
 
 /**
@@ -112,7 +109,7 @@ export async function prism_activate(context: vscode.ExtensionContext) {
   // [PrismItem의 this.command argument](/src\code-prism\PrismTreeProvider.ts#30-35) 참고
   context.subscriptions.push(
     vscode.commands.registerCommand('CodePrism.command.prismFile.show', (item: PrismItem) => {
-      PrismViewer.showPrismViewer(item.prism)
+      PrismFileViewer.showPrismViewer(item.prism)
     })
   )
 
@@ -161,7 +158,7 @@ export async function prism_activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
     vscode.commands.registerCommand('CodePrism.command.issue.goto', (item: IssueItem) => {
-      PrismViewer.showPrismViewer(item.prism, item.issue)
+      PrismFileViewer.showPrismViewer(item.prism, item.issue)
     })
   )
 
@@ -311,53 +308,6 @@ export async function prism_activate(context: vscode.ExtensionContext) {
       prismTreeProvider.refreshPrismView()
     })
   )
-
-  context.subscriptions.push(
-    vscode.commands.registerCommand('CodePrism.command.CopyCodeAnchorLink', () => {
-      const editor = vscode.window.activeTextEditor
-      if (!editor) {
-        return
-      }
-
-      const { code, range, path } = PrismManager.getCodeWithRangeAndPath(editor)
-
-      let title = code.split('\n')[0]
-      const exclude = ['(', ')', '[', ']']
-      exclude.forEach(item => {
-        title = title.replaceAll(item, '')
-      })
-
-      const link = `[${title.trim()}](/${path}#${range.start.line + 1}-${range.end.line + 1})`
-
-      vscode.env.clipboard.writeText(link)
-    })
-  )
-
-  context.subscriptions.push(
-    vscode.commands.registerCommand('CodePrism.command.CopyOnePlusOneLink', () => {
-      const editor = vscode.window.activeTextEditor
-      if (!editor) {
-        return
-      }
-
-      let { code } = PrismManager.getCodeWithRangeAndPath(editor)
-
-      const name = uuid()
-      const link = `[[1+1=${name}]]`
-      createCodeSnippetFile(name, code)
-
-      vscode.env.clipboard.writeText(link)
-    })
-  )
-
-  linkdetector_activate(context)
-  output.log('activated link-detector')
-
-  oneplusone_activate(context)
-  output.log('activated 1+1-detector')
-
-  docdetector_activate(context)
-  output.log('activated doc-detector')
 
   // load all Prism files
   const prisms = await PrismManager.loadPrismFiles()

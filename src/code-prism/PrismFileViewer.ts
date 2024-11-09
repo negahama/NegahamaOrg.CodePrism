@@ -2,11 +2,12 @@ import * as vscode from 'vscode'
 import path from 'path'
 
 import { Prism, Issue } from './Prism'
+import { PrismPath } from './PrismPath'
+import { PrismFileSystem } from './PrismFileSystem'
 import { PrismManager } from './PrismManager'
-import { PrismFileSystem, PrismPath } from './PrismFileManager'
 import { marked } from 'marked'
 
-export class PrismWebviewPanel {
+class PrismWebviewPanel {
   private panel: vscode.WebviewPanel
 
   constructor(
@@ -72,7 +73,7 @@ export class PrismWebviewPanel {
  * PrismViewer.openMarkdownFile(issue);
  * ```
  */
-export class PrismViewer {
+export class PrismFileViewer {
   static prism: Prism
   static panel: PrismWebviewPanel
 
