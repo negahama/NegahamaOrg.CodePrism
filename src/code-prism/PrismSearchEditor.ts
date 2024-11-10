@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
+import path from 'path'
 
 import { PrismPath } from './PrismPath'
-import path from 'path'
 
 export namespace PrismSearchEditor {
   export async function activate(context: vscode.ExtensionContext) {

@@ -767,7 +767,7 @@ export class PrismCommentController {
       return cmt
     })
 
-    // pcmt.thread와 pcmt.id를 이용해서 note를 찾은 다음 call back을 호출해서 note를 삭제한다.
+    // pcmt.thread와 pcmt.id를 이용해서 note를 찾은 다음 call back을 호출해서 note를 update한다.
     this.doItForNodeFromThread(thread, pcmt.id, (prism: Prism, issue: Issue, note: Note) => {
       if (found) {
         const { category, contents } = convertCommentToNote(found.body)

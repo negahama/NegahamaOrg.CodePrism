@@ -81,7 +81,36 @@ The prism file and the document correspond one-to-one, and one prism file may co
 
 ![screen shot](https://github.com/negahama/NegahamaOrg.CodePrism/blob/main/images/Screenshot182825.png?raw=true)
 
+### copy code-anchor link
+
+Creates a link to a specific part of the code.
+
+You can attach the generated link to any document(include codes) by using `Ctrl + V`.
+
+This is a link based on the location of the code.
+Therefore, code-anchor links are not appropriate if the location of the code is prone to change.
+
+In that case, consider the 1+1 link described below
+
+![screen shot](https://github.com/negahama/NegahamaOrg.CodePrism/blob/main/images/code-anchor-link-demo.gif?raw=true)
+
+### copy 1+1 link
+
+1+1 link copies the code piece to prism's folder and uses it.
+
+The word 1+1 is a little awkward, but it was used to mean that the code comes with the link.
+
+Therefore, it can be used regardless of the code's location. However, it does not process until the content of the code changes.
+
+![screen shot](https://github.com/negahama/NegahamaOrg.CodePrism/blob/main/images/one-plus-one-link-demo.gif?raw=true)
+
 ## 🔗 Release Notes
+
+### 1.4.0 - November 10, 2024
+
+1. implement 1 + 1 link
+2. implement the feature that generate mermaid diagram for all references
+3. implement the features that are 'CodePrism.command.findReferences' and 'CodePrism.command.findImplementations'
 
 ### 1.3.3 - November 8, 2024
 
@@ -113,12 +142,6 @@ changed icon color and tooltip content of prism tree view and bug fix.
 3. appended the method of modifying note's category(you can changed the category when you write the comment)
 4. improved some stuff of display and performance.
 5. bug fixes.
-
-### 1.2.0 - November 3, 2024
-
-1. implement to cahnge issue's position
-2. implement to change note's category
-3. implement to make markdown file related the note
 
 ## 💚 Code Prism is base of 💚
 

@@ -4,6 +4,12 @@ All notable changes to the "Code Prism" extension will be documented in this fil
 
 <!-- ### version - Month day, year -->
 
+### 1.4.0 - November 10, 2024
+
+1. implement 1 + 1 link
+2. implement the feature that generate mermaid diagram for all references
+3. implement the features that are 'CodePrism.command.findReferences' and 'CodePrism.command.findImplementations'
+
 ### 1.3.3 - November 8, 2024
 
 changed url of screen shot images

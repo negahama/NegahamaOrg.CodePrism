@@ -37,7 +37,9 @@ export namespace PrismLinkDetector {
       }
       // parseLink에서 리턴되는 description은 []로 감싸져 있으므로 그대로 사용한다.
       // 하지만 fileName에는 `file:///`가 포함되어 있지 않기 때문에 추가해야 한다.
-      const linkText = `${linkInfo.description}(file:///${linkInfo.fileName})`
+      // 또한 fragment가 포함되어 있으면 이것도 추가해야 한다.
+      const pathText = linkInfo.fragment ? `${linkInfo.fileName}#${linkInfo.fragment}` : linkInfo.fileName
+      const linkText = `${linkInfo.description}(file:///${pathText})`
       text = text.replace(match[0], linkText)
     }
     return text
