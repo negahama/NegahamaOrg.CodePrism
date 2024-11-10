@@ -303,7 +303,7 @@ export interface Comment {
 }
 ````
 
-NoteDescription 은 Comment에 id, label, savedBody, thread가 추가한 자료형으로 각 자료형은 다음과 같은 목적으로 사용된다.
+PrismComment 은 Comment에 id, label, savedBody, thread가 추가한 자료형으로 각 자료형은 다음과 같은 목적으로 사용된다.
 
 body: string | MarkdownString
 실제 comment 내용
@@ -348,14 +348,313 @@ thread: CommentThread
 
 ## setContext 사용법
 
+아래와 같이 다양한 정보를 저장할 수 있다.
+
+```ts
 public static readonly pinnedContext = 'CodePrism.context.definitionView.isPinned'
 vscode.commands.executeCommand('setContext', DefinitionViewProvider.pinnedContext, value)
-
 {
 "command": "CodePrism.command.definitionView.pin",
 "when": "!CodePrism.context.definitionView.isPinned"
 },
+
+const markerLines = new Set<number>()
+vscode.commands.executeCommand('setContext', 'codeExplorer.markerLines', Array.from(markerLines))
 {
-"command": "CodePrism.command.definitionView.unpin",
-"when": "CodePrism.context.definitionView.isPinned"
+  "command": "codeExplorer.gutter.revealMarker",
+  "when": "editorLineNumber in codeExplorer.markerLines"
+},
+```
+
+## clipboard 사용법
+
+```ts
+await vscode.env.clipboard.writeText(getMarkerClipboardText(el.marker))
+
+function getMarkerClipboardText(marker: Marker) {
+  let tags = marker.tags?.map(t => '[' + t + ']').join('') ?? ''
+  if (tags.length) tags += ' '
+
+  const loc = `${getRelativeFilePath(marker.file)}:${marker.line + 1}:${marker.column + 1}`
+  const title = marker.title ? ' # ' + marker.title : ''
+  const indent = '  '.repeat(marker.indent ?? 0)
+
+  return `${indent}- ${tags}${loc} ${marker.code}${title}`
 }
+
+const text = await vscode.env.clipboard.readText()
+
+const lines = text.split('\n')
+const markers = lines
+  .map(line => {
+    const matches = /^(.+?) \(((?:\/[^/]+)+):(\d+)\)$/.exec(line)
+    if (!matches) return null
+    const code = matches[1]
+    const file = matches[2]
+    const lineNo = parseInt(matches[3], 10)
+    return { code, file, line: lineNo - 1, column: 0 }
+  })
+  .filter(Boolean) as Omit<Marker, 'createdAt' | 'id'>[]
+```
+
+## argument
+
+내 경우는 command 등록을 다음과 같이 한다.
+
+```ts
+context.subscriptions.push(
+  vscode.commands.registerCommand('CodePrism.command.prismFile.show', (item: PrismItem) => {
+    PrismViewer.showPrismViewer(item.prism)
+  })
+)
+```
+
+하지만 이 방법만 있는 것은 아니다.
+
+```ts
+vscode.commands.registerCommand('CodePrism.command.prismFile.show', showPrismViewer)
+//context.subscriptions.push(showPrismViewer)
+
+function showPrismViewer() {
+  const item = arguments[0]
+  console.log('item:', item)
+  PrismViewer.showPrismViewer(item.prism)
+}
+```
+
+여기서 command handler 함수인 showPrismViewer()에서 뜬금없이 arguments 를 사용할 수 있다는 점이 중요하다.
+
+## WorkspaceEdit 사용법
+
+```ts
+// newProjectNote - Create New Project Note and Open for Editing
+const workspaceEdit = new vscode.WorkspaceEdit()
+workspaceEdit.createFile(vscode.Uri.file(newProjectNote), { overwrite: false })
+await vscode.workspace.applyEdit(workspaceEdit)
+const document = await vscode.workspace.openTextDocument(newProjectNote)
+vscode.window.showTextDocument(document, { preview: false })
+
+// renameProjectNote - Perform Rename
+const workspaceEdit = new vscode.WorkspaceEdit()
+workspaceEdit.renameFile(vscode.Uri.file(arguments[0].fsPath), vscode.Uri.file(newProjectNote), { overwrite: false })
+await vscode.workspace.applyEdit(workspaceEdit)
+```
+
+## CreateFileSystemWatcher 사용법
+
+```ts
+const globalWatcher = vscode.workspace.createFileSystemWatcher(
+  new vscode.RelativePattern(vscode.Uri.file(globalNotesFolder), '*.{md,MD,Md,mD}')
+)
+globalWatcher.onDidCreate(uri => GlobalOutlineProvider.refresh()) // Listen to files/folders being created
+globalWatcher.onDidDelete(uri => GlobalOutlineProvider.refresh()) // Listen to files/folders getting deleted
+```
+
+````ts
+/**
+ * Creates a file system watcher that is notified on file events (create, change, delete)
+ * depending on the parameters provided.
+ *
+ * By default, all opened {@link workspace.workspaceFolders workspace folders} will be watched
+ * for file changes recursively.
+ *
+ * Additional paths can be added for file watching by providing a {@link RelativePattern} with
+ * a `base` path to watch. If the path is a folder and the `pattern` is complex (e.g. contains
+ * `**` or path segments), it will be watched recursively and otherwise will be watched
+ * non-recursively (i.e. only changes to the first level of the path will be reported).
+ *
+ * *Note* that paths that do not exist in the file system will be monitored with a delay until
+ * created and then watched depending on the parameters provided. If a watched path is deleted,
+ * the watcher will suspend and not report any events until the path is created again.
+ *
+ * If possible, keep the use of recursive watchers to a minimum because recursive file watching
+ * is quite resource intense.
+ *
+ * Providing a `string` as `globPattern` acts as convenience method for watching file events in
+ * all opened workspace folders. It cannot be used to add more folders for file watching, nor will
+ * it report any file events from folders that are not part of the opened workspace folders.
+ *
+ * Optionally, flags to ignore certain kinds of events can be provided.
+ *
+ * To stop listening to events the watcher must be disposed.
+ *
+ * *Note* that file events from recursive file watchers may be excluded based on user configuration.
+ * The setting `files.watcherExclude` helps to reduce the overhead of file events from folders
+ * that are known to produce many file changes at once (such as `.git` folders). As such,
+ * it is highly recommended to watch with simple patterns that do not require recursive watchers
+ * where the exclude settings are ignored and you have full control over the events.
+ *
+ * *Note* that symbolic links are not automatically followed for file watching unless the path to
+ * watch itself is a symbolic link.
+ *
+ * *Note* that the file paths that are reported for having changed may have a different path casing
+ * compared to the actual casing on disk on case-insensitive platforms (typically macOS and Windows
+ * but not Linux). We allow a user to open a workspace folder with any desired path casing and try
+ * to preserve that. This means:
+ * * if the path is within any of the workspace folders, the path will match the casing of the
+ *   workspace folder up to that portion of the path and match the casing on disk for children
+ * * if the path is outside of any of the workspace folders, the casing will match the case of the
+ *   path that was provided for watching
+ * In the same way, symbolic links are preserved, i.e. the file event will report the path of the
+ * symbolic link as it was provided for watching and not the target.
+ *
+ * ### Examples
+ *
+ * The basic anatomy of a file watcher is as follows:
+ *
+ * ```ts
+ * const watcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(<folder>, <pattern>));
+ *
+ * watcher.onDidChange(uri => { ... }); // listen to files being changed
+ * watcher.onDidCreate(uri => { ... }); // listen to files/folders being created
+ * watcher.onDidDelete(uri => { ... }); // listen to files/folders getting deleted
+ *
+ * watcher.dispose(); // dispose after usage
+ * ```
+ *
+ * #### Workspace file watching
+ *
+ * If you only care about file events in a specific workspace folder:
+ *
+ * ```ts
+ * vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(vscode.workspace.workspaceFolders[0], '**​/*.js'));
+ * ```
+ *
+ * If you want to monitor file events across all opened workspace folders:
+ *
+ * ```ts
+ * vscode.workspace.createFileSystemWatcher('**​/*.js');
+ * ```
+ *
+ * *Note:* the array of workspace folders can be empty if no workspace is opened (empty window).
+ *
+ * #### Out of workspace file watching
+ *
+ * To watch a folder for changes to *.js files outside the workspace (non recursively), pass in a `Uri` to such
+ * a folder:
+ *
+ * ```ts
+ * vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(vscode.Uri.file(<path to folder outside workspace>), '*.js'));
+ * ```
+ *
+ * And use a complex glob pattern to watch recursively:
+ *
+ * ```ts
+ * vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(vscode.Uri.file(<path to folder outside workspace>), '**​/*.js'));
+ * ```
+ *
+ * Here is an example for watching the active editor for file changes:
+ *
+ * ```ts
+ * vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(vscode.window.activeTextEditor.document.uri, '*'));
+ * ```
+ *
+ * @param globPattern A {@link GlobPattern glob pattern} that controls which file events the watcher should report.
+ * @param ignoreCreateEvents Ignore when files have been created.
+ * @param ignoreChangeEvents Ignore when files have been changed.
+ * @param ignoreDeleteEvents Ignore when files have been deleted.
+ * @returns A new file system watcher instance. Must be disposed when no longer needed.
+ */
+export function createFileSystemWatcher(
+  globPattern: GlobPattern,
+  ignoreCreateEvents?: boolean,
+  ignoreChangeEvents?: boolean,
+  ignoreDeleteEvents?: boolean
+): FileSystemWatcher
+
+/**
+ * A relative pattern is a helper to construct glob patterns that are matched
+ * relatively to a base file path. The base path can either be an absolute file
+ * path as string or uri or a {@link WorkspaceFolder workspace folder}, which is the
+ * preferred way of creating the relative pattern.
+ */
+export class RelativePattern {
+  /**
+   * A base file path to which this pattern will be matched against relatively. The
+   * file path must be absolute, should not have any trailing path separators and
+   * not include any relative segments (`.` or `..`).
+   */
+  baseUri: Uri
+
+  /**
+   * A base file path to which this pattern will be matched against relatively.
+   *
+   * This matches the `fsPath` value of {@link RelativePattern.baseUri}.
+   *
+   * *Note:* updating this value will update {@link RelativePattern.baseUri} to
+   * be a uri with `file` scheme.
+   *
+   * @deprecated This property is deprecated, please use {@link RelativePattern.baseUri} instead.
+   */
+  base: string
+
+  /**
+   * A file glob pattern like `*.{ts,js}` that will be matched on file paths
+   * relative to the base path.
+   *
+   * Example: Given a base of `/home/work/folder` and a file path of `/home/work/folder/index.js`,
+   * the file glob pattern will match on `index.js`.
+   */
+  pattern: string
+
+  /**
+   * Creates a new relative pattern object with a base file path and pattern to match. This pattern
+   * will be matched on file paths relative to the base.
+   *
+   * Example:
+   * ```ts
+   * const folder = vscode.workspace.workspaceFolders?.[0];
+   * if (folder) {
+   *
+   *   // Match any TypeScript file in the root of this workspace folder
+   *   const pattern1 = new vscode.RelativePattern(folder, '*.ts');
+   *
+   *   // Match any TypeScript file in `someFolder` inside this workspace folder
+   *   const pattern2 = new vscode.RelativePattern(folder, 'someFolder/*.ts');
+   * }
+   * ```
+   *
+   * @param base A base to which this pattern will be matched against relatively. It is recommended
+   * to pass in a {@link WorkspaceFolder workspace folder} if the pattern should match inside the workspace.
+   * Otherwise, a uri or string should only be used if the pattern is for a file path outside the workspace.
+   * @param pattern A file glob pattern like `*.{ts,js}` that will be matched on paths relative to the base.
+   */
+  constructor(base: WorkspaceFolder | Uri | string, pattern: string)
+}
+````
+
+```ts
+// updateDecorations - Ignore comments in strings 
+let commentInString = /^[^'"\r\n]+(['"])[^'"]+[\r\n]/gmi
+
+let keyword = element.keyword
+let keywordRegex = new RegExp('\\b'+keyword+'\\b:?', 'gi');
+
+let regExStartFixed = regExStart.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&');
+let regExEnd = element.endText;
+let regExEndFixed = regExEnd.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&');
+let tagBlockRegEx = new RegExp(regExStartFixed+'([^\r\n]+?)'+regExEndFixed,'gi');
+
+let filelinkRegEx = /project file:\s*([\w\s\d!@()\-+]+.md)/gi;
+
+let parenthesesRegEx = /(\(.+\))/gi;
+while (commentMatch = commentsRegEx.exec(text)) {
+
+// updateDecorations - Special Tags - Curly Braces 
+let curlyRegEx = /(\{.+\})/gi;
+while (commentMatch = commentsRegEx.exec(text)) {
+
+// updateDecorations - Special Tags - Brackets 
+let bracketRegEx = /(\[(.+)\])/gi;
+while (commentMatch = commentsRegEx.exec(text)) {
+
+// updateDecorations - Special Tags - Backticks 
+let backtickRegEx = /(`.*?`)/gi;
+
+// updateDecorations - Special Tags - Double Quotes 
+let doubleQuotesRegEx = /(\".*?\")/gi;
+
+// updateDecorations - Special Tags - Single Quotes 
+let singleQuotesRegEx = /('.*')/gi;
+
+```

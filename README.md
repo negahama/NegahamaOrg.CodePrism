@@ -71,11 +71,27 @@ The prism file and the document correspond one-to-one, and one prism file may co
 
 ### Auto-search
 
+It takes a lot of searching to analyze something.
+
+With the help of a language server, VS Code can already be used for smart searches such as reference search and definition search.
+
+I don't think there's a particular need for a new search function, but I do think there's a need to use it more conveniently or display it effectively.
+
+When you select a symbol from the code, the code prism displays basic information about selected symbol in the definition view, such as the declaration and definition of this symbol by default.
+
+And I gathered various search methods in one place(top of the definition view).
+
+I also reduced the inconvenience of having to check the search results one by one using a search editor.
+
+These efforts of Code Prism are just about utilizing the existing VS Code functionality, but I found it convenient just to place various search functions in one place.
+
 - Automatically displays definition information for the symbol at the current cursor position.
 - Language independent. Works in any language that supports hovers.
 - Supports syntax highlighting and markdown rendering in the docs view.
 
 ![screen shot](https://github.com/negahama/NegahamaOrg.CodePrism/blob/main/images/Screenshot211953.png?raw=true)
+
+![screen shot](https://github.com/negahama/NegahamaOrg.CodePrism/blob/main/images/reference-search-editor-demo.gif?raw=true)
 
 ### link documents
 
