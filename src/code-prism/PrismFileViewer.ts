@@ -7,9 +7,40 @@ import { PrismFileSystem } from './PrismFileSystem'
 import { PrismManager } from './PrismManager'
 import { marked } from 'marked'
 
+/**
+ * Represents a webview panel in Visual Studio Code.
+ *
+ * @class PrismWebviewPanel
+ *
+ * @property {vscode.WebviewPanel} panel - The webview panel instance.
+ *
+ * @constructor
+ * @param {string} id - The unique identifier for the webview panel.
+ * @param {string} title - The title of the webview panel.
+ * @param {vscode.ViewColumn} column - The column in which to show the webview panel.
+ * @param {string} [content] - Optional HTML content to display in the webview.
+ * @param {(message: any) => void} [messageListener] - Optional callback to handle messages received from the webview.
+ * @param {() => void} [disposeListener] - Optional callback to handle the disposal of the webview panel.
+ *
+ * @method updateContent
+ * @param {string} content - The new HTML content to display in the webview.
+ *
+ * @method postMessage
+ * @param {any} message - The message to post to the webview.
+ */
 class PrismWebviewPanel {
   private panel: vscode.WebviewPanel
 
+  /**
+   * Creates an instance of PrismFileViewer.
+   *
+   * @param id - The unique identifier for the webview panel.
+   * @param title - The title of the webview panel.
+   * @param column - The column in which to show the webview panel.
+   * @param content - Optional HTML content to display in the webview.
+   * @param messageListener - Optional callback to handle messages received from the webview.
+   * @param disposeListener - Optional callback to handle the disposal of the webview panel.
+   */
   constructor(
     id: string,
     title: string,

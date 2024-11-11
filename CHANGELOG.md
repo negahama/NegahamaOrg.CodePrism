@@ -9,6 +9,7 @@ All notable changes to the "Code Prism" extension will be documented in this fil
 1. implement 1 + 1 link
 2. implement the feature that generate mermaid diagram for all references
 3. implement the features that are 'CodePrism.command.findReferences' and 'CodePrism.command.findImplementations'
+4. I decided to include the results of the process of analyzing and developing the Code Prism using this Code Prism extension in the GitHub repository. so you can see more information about the Code Prism when you visit the [github repository](https://github.com/negahama/NegahamaOrg.CodePrism.git)
 
 ### 1.3.3 - November 8, 2024
 

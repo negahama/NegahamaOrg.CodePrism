@@ -22,6 +22,27 @@
           "content": "note가 하나도 없으면 issue도 삭제되는데 여기서는 이슈가 남아있다."
         }
       ]
+    },
+    {
+      "id": "19c9b775ae4f30c479ed5af8508af132",
+      "title": "`export class PrismFileViewer {` at src\\code-prism\\PrismFileViewer.ts#178",
+      "source": {
+        "file": "/src/code-prism/PrismFileViewer.ts",
+        "startLine": 178,
+        "startColumn": 0,
+        "endLine": 178,
+        "endColumn": 0
+      },
+      "notes": [
+        {
+          "id": "3edd7c0344aae1a866edab7c246531b1",
+          "category": "Docs",
+          "importance": "Medium",
+          "createdAt": "2024-11-11T00:28:12.951Z",
+          "content": "PrismFileViewer's mermaid classDiagram",
+          "link": "file:///./docs/3edd7c0344aae1a866edab7c246531b1.md"
+        }
+      ]
     }
   ]
 }

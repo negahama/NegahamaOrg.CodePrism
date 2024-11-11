@@ -8,9 +8,9 @@ When we analyze the code, many meta-data could occur, such as summary of what we
 
 This extension is for these cases, _this extension manage these meta-data associated with code without modifying the code._
 
-In fact, Code Prism is not just for source code, it is for all documents. so it allows you to leave the necessary comments on all kinds of documents(.md, .json, etc.) as well as the source code
+In fact, the Code Prism is not just for source code, it is for all documents. so it allows you to leave the necessary comments on all kinds of documents(.md, .json, etc.) as well as the source code
 
-Code Prism is basically a code review program. but it's simple to use and includes useful features for code analysis.
+The Code Prism is basically a code review program. but it's simple to use and includes useful features for code analysis.
 
 **_Enjoy!_**
 
@@ -31,7 +31,7 @@ Sometimes you simply refer to a well-defined API, but sometimes you need to know
 
 It's not just the individual's ability and effort that you need when you want to understand what purpose this function was used, why they use it like this, and how it might affect other parts of the system.
 
-Code prism aims to help you understand and analyze systems
+The Code Prism aims to help you understand and analyze systems
 
 There are a number of tools available to assist with analysis. These tools analyze the code on their own and display their information in documents and diagrams.
 
@@ -45,17 +45,26 @@ As a starting point, I'm going to start with something that can be easily viewed
 
 ## Features
 
-Code Prism is consist of 3 parts
+Code Prism is consist of 4 parts
 
 - Recording metadata
 - Auto-search information of symbol
-- link documents(markdown file) to source
+- Link documents(markdown file) to source
+- Support mermaid diagram preview
+
+Code Prism is an analytical tool, but it can also be used during development.
+
+Code Prism is also useful enough as a substitute for todo list, bookmark, so in my case, after I developed the Code Prism, I deleted all extension related todo list, bookmark.
 
 ### Recoding metadata
 
-- Manage information associated with a specific part of the document without changing the source.
+The Code Prism manage information associated with a specific part of the document without changing the source.
 
-![screen shot](https://github.com/negahama/NegahamaOrg.CodePrism/blob/main/images/Screenshot181558.png?raw=true)
+The Code Prism manages this metadata as follows.
+
+- Prism file
+- Issue
+- Note
 
 #### Prism file
 
@@ -63,11 +72,15 @@ The prism file and the document correspond one-to-one, and one prism file may co
 
 #### Issue
 
+The issue is a key structure in the Code Prism.
+
 `Issue` is opinions on specific parts of the document. Therefore, `Issue` is linked to specific parts of the document and can have multiple `Note`s.
 
 #### Note
 
 `Note` is opinion and information, it can be simple text, link, image, video and document.
+
+![screen shot](https://github.com/negahama/NegahamaOrg.CodePrism/blob/main/images/Screenshot181558.png?raw=true)
 
 ### Auto-search
 
@@ -77,7 +90,7 @@ With the help of a language server, VS Code can already be used for smart search
 
 I don't think there's a particular need for a new search function, but I do think there's a need to use it more conveniently or display it effectively.
 
-When you select a symbol from the code, the code prism displays basic information about selected symbol in the definition view, such as the declaration and definition of this symbol by default.
+When you select a symbol from the code, the Code Prism displays basic information about selected symbol in the definition view, such as the declaration and definition of this symbol by default.
 
 And I gathered various search methods in one place(top of the definition view).
 
@@ -93,11 +106,11 @@ These efforts of Code Prism are just about utilizing the existing VS Code functi
 
 ![screen shot](https://github.com/negahama/NegahamaOrg.CodePrism/blob/main/images/reference-search-editor-demo.gif?raw=true)
 
-### link documents
+### Link documents
 
 ![screen shot](https://github.com/negahama/NegahamaOrg.CodePrism/blob/main/images/Screenshot182825.png?raw=true)
 
-### copy code-anchor link
+#### copy code-anchor link
 
 Creates a link to a specific part of the code.
 
@@ -110,7 +123,7 @@ In that case, consider the 1+1 link described below
 
 ![screen shot](https://github.com/negahama/NegahamaOrg.CodePrism/blob/main/images/code-anchor-link-demo.gif?raw=true)
 
-### copy 1+1 link
+#### copy 1+1 link
 
 1+1 link copies the code piece to prism's folder and uses it.
 
@@ -120,6 +133,16 @@ Therefore, it can be used regardless of the code's location. However, it does no
 
 ![screen shot](https://github.com/negahama/NegahamaOrg.CodePrism/blob/main/images/one-plus-one-link-demo.gif?raw=true)
 
+### Support mermaid diagram preview
+
+I'm sure most of you know about mermaid.js.
+
+The Code Prism supports only the preview of meraid.js, but it can detect the mermaid mark on the code. So when you see this mark, you'll see also `Open diagram` at the above of the mark, and you can click it to open the previewer easily.
+
+I use `Github Copilot` to create a mermaid diagram. It doesn't always show perfect results, but it's still useful sometimes.
+
+mermaid offical site : https://mermaid.js.org/
+
 ## 🔗 Release Notes
 
 ### 1.4.0 - November 10, 2024
@@ -127,6 +150,7 @@ Therefore, it can be used regardless of the code's location. However, it does no
 1. implement 1 + 1 link
 2. implement the feature that generate mermaid diagram for all references
 3. implement the features that are 'CodePrism.command.findReferences' and 'CodePrism.command.findImplementations'
+4. I decided to include the results of the process of analyzing and developing the Code Prism using this Code Prism extension in the GitHub repository. so you can see more information about the Code Prism when you visit the [github repository](https://github.com/negahama/NegahamaOrg.CodePrism.git)
 
 ### 1.3.3 - November 8, 2024
 
@@ -167,6 +191,8 @@ changed icon color and tooltip content of prism tree view and bug fix.
 - [Code Explorer](https://marketplace.visualstudio.com/items?itemName=tianjianchn.code-explorer)
 - [Project Notes](https://marketplace.visualstudio.com/items?itemName=willasm.pnotes)
 - [CodeTour](https://marketplace.visualstudio.com/items?itemName=vsls-contrib.codetour)
+
+Thank all of you very much!!!
 
 ## 🔗 Following extension guidelines
 

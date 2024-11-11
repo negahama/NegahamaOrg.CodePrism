@@ -43,7 +43,7 @@
       "notes": [
         {
           "id": "c56c8ea01da1338354fe2cf72ec9d6b1",
-          "category": "Todo",
+          "category": "Sample",
           "importance": "Medium",
           "createdAt": "2024-11-07T14:46:06.349Z",
           "content": "![image](file:///d:/Samuel/NegahamaOrg.CodePrism/images/Screenshot182825.png)"
@@ -63,7 +63,7 @@
       "notes": [
         {
           "id": "b0cb3d4661e8682c4014427218852b43",
-          "category": "Todo",
+          "category": "Sample",
           "importance": "Medium",
           "createdAt": "2024-11-10T12:24:19.790Z",
           "content": "표\r\n\r\n| 항목 | 설명 |\r\n|---|---|\r\n| 1. todo | 해야할 일 |\r\n| 2. bookmark | 북마크 |\r\n| 3. description | 코드에 대한 나의 설명 |\r\n| 4. link | 해당 부분과 관련된 각종 링크들 |\r\n| 5. doc | 해당 부분과 관련된 문서와 이미지등등 |\r\n| 6. bug | 코드 상의 버그로 추정되는 것 |"
