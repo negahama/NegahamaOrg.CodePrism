@@ -4,6 +4,20 @@ import path from 'path'
 import { PrismPath } from './PrismPath'
 
 export namespace PrismSearchEditor {
+  /**
+   * Activates the extension by registering commands for finding references and implementations.
+   *
+   * @param context - The extension context provided by VSCode.
+   *
+   * The function registers two commands:
+   * - `CodePrism.command.findReferences`: Finds all references of the symbol at the current cursor position
+   *   in the active text editor and opens a search editor with the results.
+   * - `CodePrism.command.findImplementations`: Finds all implementations of the symbol at the current cursor position
+   *   in the active text editor and opens a search editor with the results.
+   *
+   * Both commands handle cases where the references or implementations are located in `node_modules` by opening the
+   * corresponding file in a new editor tab before performing the search.
+   */
   export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
       vscode.commands.registerCommand('CodePrism.command.findReferences', async () => {

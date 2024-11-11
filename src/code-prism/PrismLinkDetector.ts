@@ -3,9 +3,7 @@ import { parse } from 'path'
 
 import { PrismFileSystem } from './PrismFileSystem'
 
-// [concept](/doc/concept.md) 참고
 // [linker](/doc/linker.md) 참고
-
 export namespace PrismLinkDetector {
   /**
    * Represents information about a link within the code.
@@ -16,6 +14,11 @@ export namespace PrismLinkDetector {
     fragment: string
   }
 
+  /**
+   * A regular expression pattern to detect markdown links.
+   * The pattern matches strings that follow the markdown link syntax:
+   * [link text](URL)
+   */
   const linkPattern = /\[[^\]]+\]\([^\)]+\)/g
 
   /**

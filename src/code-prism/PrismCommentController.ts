@@ -117,6 +117,7 @@ export class PrismComment implements vscode.Comment {
  * @method getThreadTitle - Retrieves the label for a given comment thread.
  * @method doItForNodeFromThread - Executes a callback function for a specific note within a comment thread.
  */
+// [comment-controller](/doc/comment-controller.md) 참고
 export class PrismCommentController {
   /**
    * The controller for managing comments within the Visual Studio Code environment.
@@ -482,7 +483,10 @@ export class PrismCommentController {
     const prismName = path.parse(source).name
     const threads = this.commentThreads.get(prismName)
     if (!threads) {
-      console.warn(`No comment thread: ${prismName}`)
+      // 새로운 문서에서 comment를 추가하려는 경우
+      console.log(`No comment thread: ${prismName}`)
+      this.commentThreads.set(prismName, [reply.thread])
+      isNewThread = true
     } else {
       if (!threads.find(thread => thread === reply.thread)) {
         console.log('new thread: thread label is', reply.thread.label)

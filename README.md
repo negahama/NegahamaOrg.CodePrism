@@ -145,43 +145,16 @@ mermaid offical site : https://mermaid.js.org/
 
 ## 🔗 Release Notes
 
+### 1.4.1 - November 11, 2024
+
+fixed the bug that don't delete comments immediately when new comment was created in new document
+
 ### 1.4.0 - November 10, 2024
 
 1. implement 1 + 1 link
 2. implement the feature that generate mermaid diagram for all references
 3. implement the features that are 'CodePrism.command.findReferences' and 'CodePrism.command.findImplementations'
 4. I decided to include the results of the process of analyzing and developing the Code Prism using this Code Prism extension in the GitHub repository. so you can see more information about the Code Prism when you visit the [github repository](https://github.com/negahama/NegahamaOrg.CodePrism.git)
-
-### 1.3.3 - November 8, 2024
-
-changed url of screen shot images
-
-### 1.3.2 - November 7, 2024
-
-bugs fix
-
-- fixed the bug that don't delete comments when the prism file is deleted
-- fixed the bug that don't append new issue when prism tree view is list mode
-- fixed the bug that don't change the category when prism tree view is list mode
-
-add functions
-
-- key binding
-- copy code-anchor link
-  this function is useful when you want to link code's specific part.
-  you can use it by context menu and pressing Ctrl+Alt+C Ctrl+Alt+C
-
-### 1.3.1 - November 6, 2024
-
-changed icon color and tooltip content of prism tree view and bug fix.
-
-### 1.3.0 - November 6, 2024
-
-1. appended new commands about finding and searching(eg. Find All Reference, Open Search Editor, and so on) in DefinitionView.
-2. appended new PrismView's mode(Issue List Mode) and implemented sorting of tree item by name, category, created time.
-3. appended the method of modifying note's category(you can changed the category when you write the comment)
-4. improved some stuff of display and performance.
-5. bug fixes.
 
 ## 💚 Code Prism is base of 💚
 

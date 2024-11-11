@@ -1,9 +1,12 @@
 ## Comment Controller
 
+> 아래 내용은 github copilot에게 Comment Controller에 대해 물어본 결과를 상당부분 포함하고 있다.
+> 그리고 내가 아는 한도내에서 잘못된 내용을 일부 수정하였다.
+
 Visual Studio Code의 Comment Controller는 코드 주석을 관리하고 상호작용하는 기능을 제공하는 API입니다. 주석 컨트롤러를 사용하면 사용자가 코드의 특정 부분에 주석을 추가하고, 주석 스레드를 관리하며, 주석과 관련된 다양한 작업을 수행할 수 있습니다.
 
-주석이라고 해서 소스 코드의 주석으로 생각하면 안된다.  
-여기서의 주석은 소스 코드의 특정 부분과 연결되어지기는 하지만 소스 코드에 남기는 주석이 아니라 사용자가 추가하는 코드에 대한 코멘트이다.
+> 주석이라고 해서 소스 코드의 주석으로 생각하면 안된다.  
+> 여기서의 주석은 소스 코드의 특정 부분과 연결되어지기는 하지만 소스 코드에 남기는 주석이 아니라 사용자가 추가하는 코드에 대한 코멘트이다.
 
 ### 주요 구성 요소
 
@@ -53,8 +56,10 @@ export function activate(context: vscode.ExtensionContext) {
     commentThread.comments = [
       {
         body: new vscode.MarkdownString('This is a comment'),
-        userName: 'User',
-        gravatar: '',
+        author: {
+          name: 'User',
+          iconPath: vscode.Uri.parse('https://www.gravatar.com/avatar/your-gravatar-hash'),
+        },
         contextValue: '',
       },
     ]
@@ -82,12 +87,8 @@ Visual Studio Code의 주석 컨트롤러를 사용하는 확장 프로그램은
 2. Live Share
    설명: Live Share는 실시간으로 코드 편집과 디버깅을 공유할 수 있는 협업 도구입니다.
    기능: 실시간으로 주석을 추가하고, 팀원들과 함께 코드 리뷰를 진행할 수 있습니다.
-3. CodeStream
-   설명: CodeStream은 코드 리뷰와 협업을 위한 확장 프로그램으로, 주석을 통해 팀원들과 의견을 교환할 수 있습니다.
-   기능: 코드의 특정 부분에 주석을 추가하고, 주석을 통해 피드백을 제공할 수 있습니다.
-4. Review Board
-   설명: Review Board는 코드 리뷰를 위한 확장 프로그램으로, 주석을 통해 코드 리뷰를 진행할 수 있습니다.
-   기능: 코드의 특정 부분에 주석을 추가하고, 주석을 통해 코드 리뷰를 진행할 수 있습니다.
+
+## Code Prism에서의 Comment Controller의 사용
 
 ### add issue
 

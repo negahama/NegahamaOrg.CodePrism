@@ -6,9 +6,21 @@ import { PrismPath } from './PrismPath'
 import { PrismManager } from './PrismManager'
 import { PrismFileSystem } from './PrismFileSystem'
 
+/**
+ * Namespace containing functionality for detecting and handling "1+1" links in code snippets.
+ */
 export namespace Prism1Plus1Detector {
+  /**
+   * Regular expression pattern for matching "1+1" links.
+   */
   const linkPattern = /\[\[1\+1\=([^\]]+?)\]\]/g
 
+  /**
+   * Constructs the full file path for a code snippet file.
+   *
+   * @param fileName - The name of the snippet file (without extension).
+   * @returns The full file path of the snippet file with a '.snippet.txt' extension.
+   */
   function getCodeSnippetFileFullName(fileName: string) {
     return path.join(PrismPath.getPrismSnippetFolderPath(), fileName + '.snippet.txt')
   }
