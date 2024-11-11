@@ -8,15 +8,15 @@
       "title": "`export class Prism {` at src\\code-prism\\Prism.ts#66",
       "source": {
         "file": "/src/code-prism/Prism.ts",
-        "startLine": 66,
+        "startLine": 30,
         "startColumn": 0,
-        "endLine": 66,
-        "endColumn": 0
+        "endLine": 30,
+        "endColumn": 18
       },
       "notes": [
         {
           "id": "16b93e0955f657263636fd3e72625814",
-          "category": "Todo",
+          "category": "Docs",
           "importance": "Medium",
           "createdAt": "2024-11-11T00:34:31.149Z",
           "content": "Prism, Issue, Note class diagram",

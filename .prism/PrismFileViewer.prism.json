@@ -28,10 +28,10 @@
       "title": "`export class PrismFileViewer {` at src\\code-prism\\PrismFileViewer.ts#178",
       "source": {
         "file": "/src/code-prism/PrismFileViewer.ts",
-        "startLine": 178,
+        "startLine": 107,
         "startColumn": 0,
-        "endLine": 178,
-        "endColumn": 0
+        "endLine": 107,
+        "endColumn": 28
       },
       "notes": [
         {
