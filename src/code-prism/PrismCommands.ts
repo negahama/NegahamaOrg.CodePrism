@@ -48,52 +48,65 @@ export async function prism_activate(context: vscode.ExtensionContext) {
   const commentController = new PrismCommentController(context)
 
   vscode.workspace.onDidChangeTextDocument(changeEvent => {
-    const issues = PrismManager.findIssuesBySource(changeEvent.document.fileName)
+    const prism = PrismManager.findPrismBySource(changeEvent.document.fileName)
+    if (!prism) {
+      return
+    }
 
     let needUpdate = false
     changeEvent.contentChanges.forEach(change => {
       const line1 = change.range.start.line
       const line2 = change.range.end.line
 
-      if (change.text.length > 0 && change.rangeLength === 0) {
-        // 텍스트가 추가되었을 때 (change.text는 추가된 텍스트)
+      let lineCount = 0
+      if (change.text.length === 0 && change.rangeLength === 0) {
+        // select만 해도 발생한다. 이 경우는 처리하지 않는다.
+        return
+      } else if (change.text.length > 0 && change.rangeLength === 0) {
+        // 텍스트가 추가되었을 때 (change.text는 추된 텍스트)
         // 텍스트 추가인 경우에도 라인이 추가되는 경우가 아니면 처리하지 않는다.
         if (!change.text.includes('\n')) {
           return
         }
+
         // 추가된 텍스트의 위치가 issue.source.startLine보다 위에 있으면 lineCount만큼 내린다
         // issue.source.startLine보다 아래에 있으면 현재 위치를 유지하고 이 두 경우는 정상적인 동작이다.
         // 문제는 추가된 텍스트의 위치가 issue.source.startLine가 같은 위치인 경우인데 이 경우는 상황에 따라서
         // 현재 위치를 유지하는 것이 맞을 수도 있고 내리는 것이 맞을 수도 있다. 현재 위치의 내용이 변경되지 않고
         // 텍스트가 추가만 되어진 경우에는 아래로 내리는 것이 맞지만 commentController 자체가 그렇게 동작하지 않기 때문에
         // 일단 현재 위치를 유지하는 것으로 해서 commentController와 동일하게 동작하게 한다.
-        issues.forEach(issue => {
-          if (issue.source.startLine > line1) {
-            const matchResult = change.text.match(/\n/g)
-            const lineCount = matchResult ? matchResult.filter(item => item !== '').length : 0
-            issue.source.startLine += lineCount
-            issue.source.endLine += lineCount
-            needUpdate = true
-          }
-        })
+        const matchResult = change.text.match(/\n/g)
+        lineCount = matchResult ? matchResult.filter(item => item !== '').length : 0
       } else if (change.text.length === 0 && change.rangeLength > 0) {
         // 텍스트가 삭제되었을 때 (rangeLength는 삭제된 텍스트의 길이)
         // 삭제된 텍스트의 위치가 issue.source.startLine보다 위에 있으면 lineCount만큼 올린다
-        issues.forEach(issue => {
-          if (issue.source.startLine > line1) {
-            const lineCount = line2 - line1
-            issue.source.startLine -= lineCount
-            issue.source.endLine -= lineCount
-            needUpdate = true
-          }
-        })
+        lineCount = -(line2 - line1)
+      } else {
+        // 이 경우는 선택되어진 텍스트를 변경할때나 JSDoc 주석을 추가하는 경우등에 발생한다.
+        // 라인이 추가될 수도 있고 삭제될 수도 있다.
+        // 원래 텍스트의 라인 수와 변경된 텍스트의 라인 수를 비교한다.
+        const deletedLineCount = line2 - line1
+        const matchResult = change.text.match(/\n/g)
+        const insertedLineCount = matchResult ? matchResult.filter(item => item !== '').length : 0
+        lineCount = insertedLineCount - deletedLineCount
       }
+
+      if (lineCount === 0) {
+        return
+      }
+      console.log('🚀 ~ insert lines:', lineCount)
+      const issues = PrismManager.findIssuesBySource(changeEvent.document.fileName)
+      issues.forEach(issue => {
+        if (issue.source.startLine > line1) {
+          issue.source.startLine += lineCount
+          issue.source.endLine += lineCount
+          needUpdate = true
+        }
+      })
     })
 
     if (needUpdate) {
-      PrismManager.getAllPrisms().forEach(prism => {
-        PrismManager.updatePrism(prism)
-      })
+      PrismManager.updatePrism(prism)
     }
   })
 

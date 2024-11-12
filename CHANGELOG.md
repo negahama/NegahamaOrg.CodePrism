@@ -4,6 +4,11 @@ All notable changes to the "Code Prism" extension will be documented in this fil
 
 <!-- ### version - Month day, year -->
 
+### 1.4.2 - November 12, 2024
+
+fixed the bug about movement of issue's position
+modify to show only specific range(also known as fragment) when hover tooltip is shown
+
 ### 1.4.1 - November 11, 2024
 
 fixed the bug that don't delete comments immediately when new comment was created in new document

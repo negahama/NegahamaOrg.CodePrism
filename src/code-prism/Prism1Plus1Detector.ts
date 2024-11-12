@@ -144,8 +144,10 @@ export namespace Prism1Plus1Detector {
             const fullName = getCodeSnippetFileFullName(fileName)
 
             const title = '🔗 Show code snippet (by Code Prism)'
-            // <div> 태그에서 보면 \n이 사용되는데 이건 # title로 시작하는 markdown을 인식되게 하기 위한 것이다.
-            const markdown = `${title} <div>\n${PrismFileSystem.getDocContent(fullName, -1)}</div>`
+            // <div> 태그 시작과 끝부분에 보면 \n이 사용되고 있다.
+            // 앞부분의 \n은 # title로 시작하는 markdown을 인식되게 하기 위한 것이다.
+            // 뒷부분의 \n은 ```으로 끝나는 경우 </div>까지 markdown의 일부로 인식되지 않게 하기 위해서이다.
+            const markdown = `${title} <div>\n${PrismFileSystem.getDocContent(fullName, -1)}\n</div>`
             const markdownString = new vscode.MarkdownString(markdown)
             return new vscode.Hover(markdownString)
           }

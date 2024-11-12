@@ -238,53 +238,84 @@ export class PrismFileSystem {
   }
 
   /**
-   * Retrieves the content of a specified file and formats it for display.
+   * Retrieves the content of a document file with optional line limit and fragment.
    * 링크된 uri에 fragment가 포함되어 있으면 오픈할 파일명으로 적절하지 않기 때문에 이를 제거하는데 이미 그렇게 오고 있다.
    * markdown 문서가 아니면 코드로 표시한다.
    *
-   * @param fileName - The name of the file to read content from.
-   * @returns A string containing the formatted content of the file. If the file has more than `lineLimit` lines,
-   *          only the first `lineLimit` lines are included followed by a '`... <more>`' indicator. If the file
-   *          extension is not 'md', the content is wrapped in code block markers.
-   * @throws Will log an error to the console if there is an issue reading the file.
+   * @param fileName - The name of the file to read.
+   * @param lineLimit - The maximum number of lines to read from the file. Defaults to 10. Use -1 for no limit.
+   * @param fragment - An optional fragment to include in the content.
+   * @returns The content of the file as a string, formatted with code blocks if necessary.
+   *
+   * @remarks
+   * - If the file is not a markdown file and the line limit is not -1, the content will be truncated to the specified number of lines.
+   * - If the file is a markdown file and the line limit is -1, the function ensures that code blocks are properly closed.
+   * - If the content is truncated, a `... <more>` indicator is appended to the content.
+   * - In case of an error while reading the file, the function returns `# No content` and logs the error to the console.
    */
-  static getDocContent(fileName: string, lineLimit: number = 10): string {
+  static getDocContent(fileName: string | vscode.Uri, lineLimit: number = 10): string {
+    const fsPath = fileName instanceof vscode.Uri ? fileName.fsPath : fileName
+    const fragment = fileName instanceof vscode.Uri ? fileName.fragment : ''
+    const ext = path.extname(fsPath)
+
     let content: string = '# No content'
     try {
-      content = this.readFile(fileName)
+      content = fs.readFileSync(fsPath, 'utf8')
+    } catch (err) {
+      console.error(err)
+      return content
+    }
 
-      let isMore = false
-      const ext = fileName.split('.').pop()
-      if (ext !== 'md') {
-        if (lineLimit !== -1) {
-          let lines = content.split('\n')
-          if (lines.length > lineLimit) {
-            lines = lines.slice(0, lineLimit)
-            isMore = true
-          }
-          content = lines.join('\n')
-        }
-        content = '\n```\n' + content + '\n```\n'
-      } else {
-        if (lineLimit === -1) {
-          // markdown의 경우에는 문서 일부만 표시할 경우 ``` 이 닫혔는지 여부를 확인해야 한다.
-          let lines = content.split('\n')
-          if (lines.length > lineLimit) {
-            lines = lines.slice(0, lineLimit)
-            const backtickCount = lines.filter(line => line.includes('```')).length
-            if (backtickCount % 2 === 1) {
-              lines.push('```')
-            }
-            isMore = true
-          }
-          content = lines.join('\n')
-        }
+    const lines = content.split('\n')
+
+    let startLine = 0
+    let endLine = lines.length
+
+    if (fragment) {
+      const match = fragment.match(/(?:#L)?(\d+)-(?:L)?(\d+)/)
+      if (match) {
+        startLine = parseInt(match[1]) - 1
+        endLine = parseInt(match[2])
       }
-      if (isMore) {
-        content += '\n`... <more>`'
+      startLine = Math.max(0, startLine)
+      endLine = Math.min(endLine, lines.length)
+      if (startLine > endLine) {
+        return '# No content'
       }
-    } catch (error) {
-      console.error(error)
+    }
+
+    let isMore = false
+    if (lineLimit !== -1) {
+      if (endLine - startLine > lineLimit) {
+        endLine = startLine + lineLimit
+        isMore = true
+      }
+    }
+    const selectedLines = lines.slice(startLine, endLine)
+
+    if (ext !== '.md') {
+      // markdown이 아닌 경우에는 코드로 표시하며 lineLimit와 fragment를 적용한다.
+      content = '\n```\n' + selectedLines.join('\n') + '\n```\n'
+    } else {
+      // markdown인 경우에는 일부분만 표시하는 경우(전체 표시인 경우에도 이 로직으로 처리)
+      // 깔끔하게 표시하기 위해서 ``` 의 쌍을 맞춰야 한다.
+      // 먼저 표시 영역 윗부분에 ```이 닫혔는지 확인한다.
+      let backtickOpen = false
+      let backtickCount = lines.filter((line, idx) => idx < startLine && line.includes('```')).length
+      if (backtickCount % 2 === 1) {
+        backtickOpen = true
+        selectedLines.unshift('```\n')
+      }
+      // 표시 영역 내부에서 ```이 닫혔는지 확인한다.
+      backtickCount = lines.filter((line, idx) => idx >= startLine && idx < endLine && line.includes('```')).length
+      backtickCount += backtickOpen ? 1 : 0
+      if (backtickCount % 2 === 1) {
+        selectedLines.push('\n```')
+      }
+      content = selectedLines.join('\n')
+    }
+    if (isMore) {
+      content += '\n`... <more>`'
     }
     return content
   }

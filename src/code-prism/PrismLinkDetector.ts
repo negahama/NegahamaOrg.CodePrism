@@ -272,10 +272,15 @@ export namespace PrismLinkDetector {
               // const commandId = 'CodePrism.command.showMarkdownPreviewToSide'
               const encodedArgs = encodeURIComponent(JSON.stringify(args))
               const openCommandUri = vscode.Uri.parse(`command:${commandId}?${encodedArgs}`)
-              // <div> 태그에서 보면 \n이 사용되는데 이건 # title로 시작하는 markdown을 인식되게 하기 위한 것이다.
+              // <div> 태그 시작과 끝부분에 보면 \n이 사용되고 있다.
+              // 앞부분의 \n은 # title로 시작하는 markdown을 인식되게 하기 위한 것이다.
+              // 뒷부분의 \n은 ```으로 끝나는 경우 </div>까지 markdown의 일부로 인식되지 않게 하기 위해서이다.
               markdown = `[${linkTitle}](${openCommandUri}) <div>\n${PrismFileSystem.getDocContent(
-                result.fileName
-              )}</div>`
+                vscode.Uri.from({
+                  ...vscode.Uri.file(result.fileName),
+                  fragment: result.fragment,
+                })
+              )}\n</div>`
             } else {
               // markdown 문서가 아닌 경우에는 코드로 표시한다.
               // markdown 문서는 tooltip에서 open document 링크를 클릭하면 preview가 오픈되지만
@@ -286,9 +291,10 @@ export namespace PrismLinkDetector {
                 ...vscode.Uri.file(result.fileName),
                 fragment: result.fragment,
               })
-              const link = /*uri.toString()*/ `file:///${result.fileName}#${result.fragment}`
+              const link = `file:///${result.fileName}#${result.fragment}`
+              const content = PrismFileSystem.getDocContent(uri, 10)
 
-              markdown = `[${linkTitle}](${link}) <div>\n${PrismFileSystem.getDocContent(result.fileName)}</div>`
+              markdown = `[${linkTitle}](${link}) <div>\n${content}\n</div>`
             }
 
             const markdownString = new vscode.MarkdownString(markdown)

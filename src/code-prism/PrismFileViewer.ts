@@ -419,7 +419,7 @@ export class PrismFileViewer {
       case 'appendNote':
         vscode.window.showInformationMessage(message.command + `: ${message.id}`)
         this.prism.issues.filter(issue => issue.id !== message.id)
-        //todo: note를 추가한다.
+        //todo: note를 추가해야한다.
         break
       case 'removeNote':
         // prism 파일 자체를 업데이트한다.

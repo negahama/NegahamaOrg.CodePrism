@@ -281,15 +281,31 @@ export class PrismManager {
   }
 
   /**
+   * Finds a prism by its source file path.
+   *
+   * @param source - The source file path to search for.
+   * @returns The prism that matches the source file path, or `undefined` if no match is found.
+   */
+  static findPrismBySource(source: string): Prism | undefined {
+    const path = '/' + PrismPath.getRelativePath(source).replace(/\\/g, '/')
+    for (const prism of this.prisms) {
+      if (prism.issues.filter(i => i.source.file === path)) {
+        return prism
+      }
+    }
+  }
+
+  /**
    * Finds and returns all issues that match the given source file.
    *
    * @param source - The source file to search for in the issues.
    * @returns An array of issues that have the specified source file.
    */
   static findIssuesBySource(source: string): Issue[] {
+    const path = '/' + PrismPath.getRelativePath(source).replace(/\\/g, '/')
     let issues: Issue[] = []
     for (const prism of this.prisms) {
-      issues = issues.concat(prism.issues.filter(i => i.source.file === source))
+      issues = issues.concat(prism.issues.filter(i => i.source.file === path))
     }
     return issues
   }

@@ -10,17 +10,6 @@ import { PrismManager, SubscribeType } from './PrismManager'
 import { output } from './PrismOutputChannel'
 
 /**
- * Creates an author information object for a comment.
- *
- * @param name - The name of the author.
- * @returns An object containing the author's name and icon path.
- */
-function createAuthor(name: string): vscode.CommentAuthorInformation {
-  const iconPath = vscode.Uri.parse('https://img.icons8.com/color/48/virtualbox.png')
-  return { name, iconPath }
-}
-
-/**
  * Represents a note description that implements the vscode.Comment interface.
  * This class is used to manage and display comments within the Code Prism extension.
  */
@@ -105,7 +94,8 @@ export class PrismComment implements vscode.Comment {
  * @method dispose - Disposes of the comment controller if it exists.
  * @method reload - Asynchronously loads Prism files and initializes comment threads for each issue.
  * @method addIssueByContext - Adds an issue to the Prism context based on the current selection in the active text editor.
- * @method deleteIssue - Deletes a comment thread or an issue item.
+ * @method createIssueDetails - Appends issue details to the current issue collection.
+ * @method changeIssuePosition - Changes the position of an issue within a comment thread.
  * @method addNote - Adds a description to an issue within a comment thread.
  * @method cancelAddNote - Cancels the addition of a note in a comment thread.
  * @method deleteNote - Deletes a note from its thread. If the thread becomes empty after the deletion, the thread is disposed of.
@@ -170,15 +160,10 @@ export class PrismCommentController {
       },
     }
 
-    // this.commentController.reactionHandler = (
-    //   comment: vscode.Comment,
-    //   reaction: vscode.CommentReaction
-    // ): Thenable<void> => {
-    //   vscode.window.showInformationMessage('reaction: ' + reaction.label)
-    //   return Promise.resolve()
-    // }
-
     // CommentController의 구독을 처리한다.
+    // append-note, update-note는 comment thread에서만 발생하기 때문에 따로 이를 subscribe 할 필요가 없고
+    // remove-note는 PrismTreeView, PrismViewer 등에서 issue delete 시에 발생할 수 있지만 remove-issue로
+    // 처리되기 때문에 remove-note를 별도로 처리해야 할 필요는 없다.
     PrismManager.subscribe('delete-prism', (data: SubscribeType) => {
       if (data.prism) {
         this.commentThreads.get(data.prism.name)?.forEach(thread => thread.dispose())
@@ -205,24 +190,6 @@ export class PrismCommentController {
           })
         })
       }
-    })
-
-    PrismManager.subscribe('append-note', (data: SubscribeType) => {
-      //todo
-    })
-
-    PrismManager.subscribe('update-note', (data: SubscribeType) => {
-      //todo
-    })
-
-    PrismManager.subscribe('remove-note', (data: SubscribeType) => {
-      assert.ok(data.prism)
-      assert.ok(data.issue)
-      assert.ok(data.note)
-
-      this.commentThreads.get(data.prism.name)?.forEach(thread => {
-        thread.comments = thread.comments.filter(cmt => (cmt as PrismComment).id !== data.note?.id)
-      })
     })
   }
 
@@ -875,6 +842,17 @@ export class PrismCommentController {
 
     callback(prism, issue, note)
   }
+}
+
+/**
+ * Creates an author information object for a comment.
+ *
+ * @param name - The name of the author.
+ * @returns An object containing the author's name and icon path.
+ */
+function createAuthor(name: string): vscode.CommentAuthorInformation {
+  const iconPath = vscode.Uri.parse('https://img.icons8.com/color/48/virtualbox.png')
+  return { name, iconPath }
 }
 
 /**

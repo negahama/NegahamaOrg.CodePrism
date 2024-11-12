@@ -8,10 +8,10 @@
       "title": "`let title = code.split('\\n')[0]` at src\\code-prism\\PrismCommentController.ts#318",
       "source": {
         "file": "/src/code-prism/PrismCommentController.ts",
-        "startLine": 351,
-        "startColumn": 0,
-        "endLine": 352,
-        "endColumn": 0
+        "startLine": 319,
+        "startColumn": 4,
+        "endLine": 319,
+        "endColumn": 31
       },
       "notes": [
         {
@@ -19,7 +19,27 @@
           "category": "Bug",
           "importance": "Medium",
           "createdAt": "2024-11-10T11:04:37.644Z",
-          "content": "Comment thread의 타이틀 부분에서 <>와 같은 것들이 &lt, &gt 와 같이 표시된다.\n\nthread.label에 전달되는 title은 정상적인 문자열이지만 thread label에서는 그렇게 보인다. vscode는 웹 형태로도 사용가능하므로 이 comment controller도 웹상에서 주석을 추가할 수 있을 것이다. 그래서 label에 마크업 특수문자가 표시되면 안되기 때문에 변환한 것으로 보인다.\n\n그런데 이것은 Comment controller의 고유 기능이라서 수정이 불가능할 것 같은데...\n\n이 부분이 몇 군데 더 있다.\n\n[thread.label = issue.title.trim](file:///d:/Samuel/NegahamaOrg.CodePrism/src/code-prism/PrismCommentController.ts#279-280)\n\n[reply.thread.label = title](file:///d:/Samuel/NegahamaOrg.CodePrism/src/code-prism/PrismCommentController.ts#513-514)\n"
+          "content": "Comment thread의 타이틀 부분에서 <>와 같은 것들이 &lt, &gt 와 같이 표시된다.\n\nthread.label에 전달되는 title은 정상적인 문자열이지만 thread label에서는 그렇게 보인다. vscode는 웹 형태로도 사용가능하므로 이 comment controller도 웹상에서 주석을 추가할 수 있을 것이다. 그래서 label에 마크업 특수문자가 표시되면 안되기 때문에 변환한 것으로 보인다.\n\n그런데 이것은 Comment controller의 고유 기능이라서 수정이 불가능할 것 같은데...\n\n이 부분이 몇 군데 더 있다.\n\n[thread.label = issue.title.trim](file:///d:/Samuel/NegahamaOrg.CodePrism/src/code-prism/PrismCommentController.ts#247-248)\n\n[reply.thread.label = title](file:///d:/Samuel/NegahamaOrg.CodePrism/src/code-prism/PrismCommentController.ts#484-485)\n"
+        }
+      ]
+    },
+    {
+      "id": "6727ce0cf625989ec777e281c63530b2",
+      "title": "`` at src\\code-prism\\PrismCommentController.ts#172",
+      "source": {
+        "file": "/src/code-prism/PrismCommentController.ts",
+        "startLine": 172,
+        "startColumn": 0,
+        "endLine": 172,
+        "endColumn": 0
+      },
+      "notes": [
+        {
+          "id": "23f72954d34ae839b17db8eafe29cdcb",
+          "category": "Docs",
+          "importance": "Medium",
+          "createdAt": "2024-11-12T03:57:02.000Z",
+          "content": "reactionHandler code... 나중 참고용으로 남겨둔다.\r\n\r\n```ts\r\nthis.commentController.reactionHandler = (\r\n  comment: vscode.Comment,\r\n  reaction: vscode.CommentReaction\r\n): Thenable<void> => {\r\n  vscode.window.showInformationMessage('reaction: ' + reaction.label)\r\n  return Promise.resolve()\r\n}\r\n```\r\n"
         }
       ]
     }

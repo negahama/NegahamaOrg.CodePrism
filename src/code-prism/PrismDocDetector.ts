@@ -72,7 +72,7 @@ export namespace PrismDocDetector {
           uri = vscode.Uri.file(prismFolder + linked.replace('file:///./', '/'))
         }
 
-        return { uri, content: PrismFileSystem.getDocContent(uri.fsPath) }
+        return { uri, content: PrismFileSystem.getDocContent(uri) }
       })
     }
 
@@ -87,7 +87,7 @@ export namespace PrismDocDetector {
             const encodedArgs = encodeURIComponent(JSON.stringify(args))
             const openCommandUri = vscode.Uri.parse(`command:${commandId}?${encodedArgs}`)
             const mds = new vscode.MarkdownString(
-              `[🔗 Open relative document (by Code Prism)](${openCommandUri}) <div>\n${doc.content}</div>`
+              `[🔗 Open relative document (by Code Prism)](${openCommandUri}) <div>\n${doc.content}\n</div>`
             )
             mds.supportHtml = true
             mds.isTrusted = true
