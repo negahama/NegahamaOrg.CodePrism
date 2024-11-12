@@ -22,6 +22,26 @@
           "content": "여기서는 CreateTreeView의 option인 showCollapseAll 을 사용하였다.\r\n\r\n이 방법이 편리하긴 하지만 이것은 collapse all button이 고정되어져 표시되기 때문에 이 위치를 변경하려면 별도로 기능을 구현해야 한다.\r\n\r\n방법은 `workbench.actions.treeView' 명령을 사용하는 것이다.\r\n\r\n트리뷰가 등록되면 VS Code에 의해 자동으로 `workbench.actions.treeView` + 해당 트리뷰의 ID + `collapseAll` 명령이 생성되고 등록된다.\r\n\r\n아래는 위 옵션이 있는 줄 몰랐을 때 실제로 사용했던 코드이다. \r\n\r\n```ts\r\nvscode.commands.executeCommand('workbench.actions.treeView.CodePrism.view.prismView.collapseAll')\r\n```\r\n\r\n그리고 참고로 collapse All 기능을 완전히 구현한 코드(이것도 실제로 구현했던 코드임 ㅜㅜ)도 남겨 둔다...\r\n\r\n```ts\r\n/**\r\n * Collapses the view in the Prism file provider.\r\n * This method triggers the collapse functionality of the prismFileProvider.\r\n */\r\nasync collapseView() {\r\n  const collapseAllItems = async (item: TreeElement) => {\r\n    await this.prismTreeView.reveal(item, { expand: false, focus: false, select: false })\r\n    const children = await this.prismTreeProvider.getChildren(item)\r\n    if (children) {\r\n      for (const child of children) {\r\n        await collapseAllItems(child)\r\n      }\r\n    }\r\n  }\r\n\r\n  // 축소는 항목을 모두 새로 그려야만 하는 것으로 보인다.\r\n  // reveal의 options의 expand는 항목이 표시될 때 항목을 확장할 것인지 여부이다.\r\n  // 숫자로 확장의 깊이를 지정할 수 있다. 중요한 것은 expand가 false이면 항목이 확장되어져\r\n  // 표시되지 않을 뿐 이미 확장되어져 있는 것이 축소되는 것은 아니다.\r\n  const rootElements = await this.prismFileProvider.getChildren()\r\n  for (const rootElement of rootElements) {\r\n    await collapseAllItems(rootElement)\r\n  }\r\n\r\n  this.prismFileProvider.refreshPrismView()\r\n}\r\n```\r\n"
         }
       ]
+    },
+    {
+      "id": "b60ccfdeb67cccbf2143af786b13adec",
+      "title": "`vscode.workspace.onDidChangeTextDocument(changeEvent => {` at src\\code-prism\\PrismCommands.ts#50",
+      "source": {
+        "file": "/src/code-prism/PrismCommands.ts",
+        "startLine": 50,
+        "startColumn": 0,
+        "endLine": 50,
+        "endColumn": 0
+      },
+      "notes": [
+        {
+          "id": "41213456ff4a70fd6ba6155fb8a04819",
+          "category": "Todo",
+          "importance": "Medium",
+          "createdAt": "2024-11-12T08:34:25.470Z",
+          "content": "상당히 오랬동안 중요한 기능이 방치되어져 있었다. 버전 1.4.2 버전에서 겨우 발견하였다니...\r\n\r\n이 코드가 상당 부분 위치를 최신 상태로 유지해 줄 수 있을 것으로 생각하지만 이슈들이 있다.\r\n\r\n* 해당 이슈가 있는 부분이 삭제되는 경우 삭제되어진 부분의 다음 라인으로 이동하는데 이것은 comment controller의 동작과 일치시키기 위해서이므로 수정할 수 있는 부분은 아니다.\r\n\r\n* 해당 이슈가 있는 부분을 포함해서 이동하는 경우는? "
+        }
+      ]
     }
   ]
 }

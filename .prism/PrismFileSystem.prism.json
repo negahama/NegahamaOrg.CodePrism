@@ -28,9 +28,9 @@
       "title": "`content = fs.readFileSync(fsPath, 'utf8')` at src\\code-prism\\PrismFileSystem.ts#262",
       "source": {
         "file": "/src/code-prism/PrismFileSystem.ts",
-        "startLine": 262,
+        "startLine": 263,
         "startColumn": 0,
-        "endLine": 262,
+        "endLine": 264,
         "endColumn": 0
       },
       "notes": [

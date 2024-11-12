@@ -94,10 +94,12 @@ export async function prism_activate(context: vscode.ExtensionContext) {
       if (lineCount === 0) {
         return
       }
-      console.log('🚀 ~ insert lines:', lineCount)
+
+      // 라인을 위로 이동시키면 늘이고 줄인다.
+      // 라인을 아래로 이동시키면 줄이고 늘인다.
       const issues = PrismManager.findIssuesBySource(changeEvent.document.fileName)
       issues.forEach(issue => {
-        if (issue.source.startLine > line1) {
+        if (issue.source.startLine - 1 > line1) {
           issue.source.startLine += lineCount
           issue.source.endLine += lineCount
           needUpdate = true
