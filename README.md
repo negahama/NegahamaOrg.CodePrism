@@ -145,6 +145,10 @@ mermaid offical site : https://mermaid.js.org/
 
 ## 🔗 Release Notes
 
+### 1.4.3 - November 12, 2024
+
+fixed the bug about movement of issue's position
+
 ### 1.4.2 - November 12, 2024
 
 fixed the bug about movement of issue's position

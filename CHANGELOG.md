@@ -4,6 +4,10 @@ All notable changes to the "Code Prism" extension will be documented in this fil
 
 <!-- ### version - Month day, year -->
 
+### 1.4.3 - November 12, 2024
+
+fixed the bug about movement of issue's position
+
 ### 1.4.2 - November 12, 2024
 
 fixed the bug about movement of issue's position

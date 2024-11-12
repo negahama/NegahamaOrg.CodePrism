@@ -69,17 +69,10 @@ export async function prism_activate(context: vscode.ExtensionContext) {
           return
         }
 
-        // 추가된 텍스트의 위치가 issue.source.startLine보다 위에 있으면 lineCount만큼 내린다
-        // issue.source.startLine보다 아래에 있으면 현재 위치를 유지하고 이 두 경우는 정상적인 동작이다.
-        // 문제는 추가된 텍스트의 위치가 issue.source.startLine가 같은 위치인 경우인데 이 경우는 상황에 따라서
-        // 현재 위치를 유지하는 것이 맞을 수도 있고 내리는 것이 맞을 수도 있다. 현재 위치의 내용이 변경되지 않고
-        // 텍스트가 추가만 되어진 경우에는 아래로 내리는 것이 맞지만 commentController 자체가 그렇게 동작하지 않기 때문에
-        // 일단 현재 위치를 유지하는 것으로 해서 commentController와 동일하게 동작하게 한다.
         const matchResult = change.text.match(/\n/g)
         lineCount = matchResult ? matchResult.filter(item => item !== '').length : 0
       } else if (change.text.length === 0 && change.rangeLength > 0) {
         // 텍스트가 삭제되었을 때 (rangeLength는 삭제된 텍스트의 길이)
-        // 삭제된 텍스트의 위치가 issue.source.startLine보다 위에 있으면 lineCount만큼 올린다
         lineCount = -(line2 - line1)
       } else {
         // 이 경우는 선택되어진 텍스트를 변경할때나 JSDoc 주석을 추가하는 경우등에 발생한다.
@@ -95,13 +88,38 @@ export async function prism_activate(context: vscode.ExtensionContext) {
         return
       }
 
-      // 라인을 위로 이동시키면 늘이고 줄인다.
-      // 라인을 아래로 이동시키면 줄이고 늘인다.
+      // 코드를 Alt키로 위로 이동시키면 이동할 위쪽의 라인을 늘이고 현재의 라인을 줄인다.
+      // 코드를 Alt키로 아래로 이동시키면 현재의 라인을 줄인 후 아래쪽의 라인을 늘인다.
       const issues = PrismManager.findIssuesBySource(changeEvent.document.fileName)
       issues.forEach(issue => {
-        if (issue.source.startLine - 1 > line1) {
-          issue.source.startLine += lineCount
-          issue.source.endLine += lineCount
+        let newLineCount = 0
+        if (lineCount < 0) {
+          if (line2 < issue.source.endLine - 1) {
+            // 삭제된 텍스트의 위치가 issue.source.endLine보다 위에 있으면 lineCount만큼 올린다
+            newLineCount = lineCount
+          } else if (line1 >= issue.source.endLine - 1) {
+            // 삭제된 텍스트의 위치가 issue.source.endLine보다 아래에 있으면 위치를 유지한다.
+          } else if (line1 < issue.source.endLine - 1 && issue.source.endLine - 1 <= line2) {
+            // 삭제된 텍스트가 issue.source.endLine과 겹치면 전체 삭제된 라인만큼 위로 이동하는 것이 아니라
+            // 원래 위치의 윗부분에서 삭제된 라인만큼만 반영되어야 한다.
+            newLineCount = -(issue.source.endLine - line1 - 1)
+          } else {
+            console.warn('another case')
+          }
+        } else {
+          // 추가된 텍스트의 위치가 issue.source.endLine보다 위에 있으면 lineCount만큼 내린다
+          // issue.source.endLine보다 아래에 있으면 현재 위치를 유지하고 이 두 경우는 정상적인 동작이다.
+          // 문제는 추가된 텍스트의 위치가 issue.source.endLine가 같은 위치인 경우인데 이 경우는 상황에 따라서
+          // 현재 위치를 유지하는 것이 맞을 수도 있고 내리는 것이 맞을 수도 있다. 현재 위치의 내용이 변경되지 않고
+          // 텍스트가 추가만 되어진 경우에는 아래로 내리는 것이 맞지만 commentController 자체가 그렇게 동작하지 않기 때문에
+          // 일단 현재 위치를 유지하는 것으로 해서 commentController와 동일하게 동작하게 한다.
+          if (issue.source.endLine - 1 > line1) {
+            newLineCount = lineCount
+          }
+        }
+        if (newLineCount !== 0) {
+          issue.source.startLine += newLineCount
+          issue.source.endLine += newLineCount
           needUpdate = true
         }
       })
