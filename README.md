@@ -110,28 +110,23 @@ These efforts of Code Prism are just about utilizing the existing VS Code functi
 
 ![screen shot](https://github.com/negahama/NegahamaOrg.CodePrism/blob/main/images/Screenshot182825.png?raw=true)
 
-#### copy code-anchor link
+#### copy adaptive link
 
-Creates a link to a specific part of the code.
+This feature creates links to specific parts of the code.
 
-You can attach the generated link to any document(include codes) by using `Ctrl + V`.
+Links that allow you to refer to a particular part of the code are useful sometimes
 
-This is a link based on the location of the code.
-Therefore, code-anchor links are not appropriate if the location of the code is prone to change.
+If you want, You can select some part of your code and generate the link by context menu or keyboard shortcut(default `Ctrl+Alt+C, Ctrl+Alt+C`) and then youn can attach the generated link to any document(include codes) by using `Ctrl + V`.
 
-In that case, consider the 1+1 link described below
+Most of links to code is based on the location of the code.
 
-![screen shot](https://github.com/negahama/NegahamaOrg.CodePrism/blob/main/images/code-anchor-link-demo.gif?raw=true)
+But link based on location is easily invalidated during the development phase where the location of code is constantly changing.
 
-#### copy 1+1 link
+So I made 1 + 1 link that is stored a specific part of the code, but rather than that, it was changed because it seems better to detect the change in the location of that part.
 
-1+1 link copies the code piece to prism's folder and uses it.
+Adaptive link can respond to changes in code locations. But it's not perfect. Most of all, content changes can't be helped
 
-The word 1+1 is a little awkward, but it was used to mean that the code comes with the link.
-
-Therefore, it can be used regardless of the code's location. However, it does not process until the content of the code changes.
-
-![screen shot](https://github.com/negahama/NegahamaOrg.CodePrism/blob/main/images/one-plus-one-link-demo.gif?raw=true)
+![screen shot](https://github.com/negahama/NegahamaOrg.CodePrism/blob/main/images/adaptive-link-demo.gif?raw=true)
 
 ### Support mermaid diagram preview
 
@@ -145,14 +140,18 @@ mermaid offical site : https://mermaid.js.org/
 
 ## 🔗 Release Notes
 
+### 1.4.4 - November 13, 2024
+
+I combined the code-anchor link and the 1+1 link to make it the [adaptive link](#copy-adaptive-link)
+
 ### 1.4.3 - November 12, 2024
 
 fixed the bug about movement of issue's position
 
 ### 1.4.2 - November 12, 2024
 
-fixed the bug about movement of issue's position
-modify to show only specific range(also known as fragment) when hover tooltip is shown
+- fixed the bug about movement of issue's position
+- modify to show only specific range(also known as fragment) when hover tooltip is shown
 
 ### 1.4.1 - November 11, 2024
 

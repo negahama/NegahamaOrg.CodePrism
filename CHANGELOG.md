@@ -4,14 +4,18 @@ All notable changes to the "Code Prism" extension will be documented in this fil
 
 <!-- ### version - Month day, year -->
 
+### 1.4.4 - November 13, 2024
+
+I combined the code-anchor link and the 1+1 link to make it the adaptive link
+
 ### 1.4.3 - November 12, 2024
 
 fixed the bug about movement of issue's position
 
 ### 1.4.2 - November 12, 2024
 
-fixed the bug about movement of issue's position
-modify to show only specific range(also known as fragment) when hover tooltip is shown
+- fixed the bug about movement of issue's position
+- modify to show only specific range(also known as fragment) when hover tooltip is shown
 
 ### 1.4.1 - November 11, 2024
 

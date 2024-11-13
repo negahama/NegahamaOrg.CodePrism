@@ -6,9 +6,9 @@ import * as vscode from 'vscode'
 import { prism_activate } from './code-prism/PrismCommands.js'
 import { PrismDocDetector } from './code-prism/PrismDocDetector'
 import { PrismLinkDetector } from './code-prism/PrismLinkDetector'
-import { Prism1Plus1Detector } from './code-prism/Prism1Plus1Detector'
-import { PrismSearchEditor } from './code-prism/PrismSearchEditor'
+import { PrismAdaptiveLinkDetector } from './code-prism/PrismAdaptiveLinkDetector.js'
 import { PrismRefDiagramGenerator } from './code-prism/PrismRefDiagramGenerator'
+import { PrismSearchEditor } from './code-prism/PrismSearchEditor'
 import { definition_activate } from './def-viewer/DefinitionViewProvider'
 import { mermaid_activate } from './mermaid-viewer/mermaid-viewer'
 import { output } from './code-prism/PrismOutputChannel'
@@ -31,8 +31,8 @@ export async function activate(context: vscode.ExtensionContext) {
   PrismLinkDetector.activate(context)
   output.log('activated link-detector')
 
-  Prism1Plus1Detector.activate(context)
-  output.log('activated 1+1-detector')
+  PrismAdaptiveLinkDetector.activate(context)
+  output.log('activated adaptive-link-detector')
 
   PrismSearchEditor.activate(context)
   output.log('activated prism-search-editor')

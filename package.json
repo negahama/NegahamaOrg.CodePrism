@@ -2,7 +2,7 @@
   "name": "codeprism",
   "displayName": "CodePrism",
   "description": "Source code analysis tool",
-  "version": "1.4.3",
+  "version": "1.4.4",
   "publisher": "NegahamaOrg",
   "author": "Samuel Kang",
   "homepage": "https://github.com/negahama/NegahamaOrg.CodePrism",
@@ -178,13 +178,8 @@
       },
       {
         "category": "Code Prism",
-        "command": "CodePrism.command.CopyCodeAnchorLink",
-        "title": "Copy code-anchor Link"
-      },
-      {
-        "category": "Code Prism",
-        "command": "CodePrism.command.CopyOnePlusOneLink",
-        "title": "Copy 1 + 1 Link"
+        "command": "CodePrism.command.CopyAdaptiveLink",
+        "title": "Copy Adaptive Link"
       },
       {
         "category": "Code Prism",
@@ -415,11 +410,7 @@
           "when": "editorTextFocus"
         },
         {
-          "command": "CodePrism.command.CopyCodeAnchorLink",
-          "when": "editorTextFocus"
-        },
-        {
-          "command": "CodePrism.command.CopyOnePlusOneLink",
+          "command": "CodePrism.command.CopyAdaptiveLink",
           "when": "editorTextFocus"
         },
         {
@@ -500,15 +491,9 @@
         "when": "editorTextFocus"
       },
       {
-        "command": "CodePrism.command.CopyCodeAnchorLink",
+        "command": "CodePrism.command.CopyAdaptiveLink",
         "key": "ctrl+alt+c ctrl+alt+c",
         "mac": "cmd+alt+c cmd+alt+c",
-        "when": "editorTextFocus"
-      },
-      {
-        "command": "CodePrism.command.CopyOnePlusOneLink",
-        "key": "ctrl+alt+c ctrl+alt+1",
-        "mac": "cmd+alt+c cmd+alt+1",
         "when": "editorTextFocus"
       }
     ],

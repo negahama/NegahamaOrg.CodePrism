@@ -238,6 +238,29 @@ export class PrismFileSystem {
   }
 
   /**
+   * Saves the provided contents to a file with the specified file name.
+   * If the directory path does not exist, it will be created recursively.
+   *
+   * @param fileName - The name (and path) of the file to save.
+   * @param contents - The contents to write to the file.
+   * @returns `true` if the file was saved successfully, otherwise `false`.
+   */
+  static saveFile(fileName: string, contents: string): boolean {
+    const dirPath = path.dirname(fileName)
+    if (!fs.existsSync(dirPath)) {
+      fs.mkdirSync(dirPath, { recursive: true })
+    }
+
+    try {
+      fs.writeFileSync(fileName, contents)
+      return true
+    } catch (err) {
+      console.error(err)
+    }
+    return false
+  }
+
+  /**
    * Retrieves the content of a document file with optional line limit and fragment.
    * 링크된 uri에 fragment가 포함되어 있으면 오픈할 파일명으로 적절하지 않기 때문에 이를 제거하는데 이미 그렇게 오고 있다.
    * markdown 문서가 아니면 코드로 표시한다.
