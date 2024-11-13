@@ -26,7 +26,7 @@ export class PrismItem extends vscode.TreeItem {
     // contextValue는 'contributes/menus/view/item/context'에서 prismFile.delete, issue.delete 명령을 구분하기 위해서 사용한다.
     this.contextValue = 'PrismItem'
 
-    // arguments로 [this]를 전달하는 이유는 [prismFile.show 명령 등록](./PrismCommands.ts#106-111)하는 부분을 참조한다.
+    // arguments로 [this]를 전달하는 이유는 [[al=1fe686d9bf6b70b79eaba4845eda4e1e]] 부분을 참조한다.
     this.command = {
       command: 'CodePrism.command.prismFile.show',
       title: 'Open',
@@ -384,8 +384,7 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<PrismTreeViewE
         // 그런데 issue를 삭제하려는 경우가 하나 남은 note를 삭제하려고 하는 경우에도 발생할 수 있는데
         // 이 경우 data의 issue는 이미 note가 삭제되어진 상태로 전달되고 여기서의 issue는 remove-note를 처리하지 않기 때문에
         // 노트가 남아있는 상태이므로 item.issue === data.issue 이렇게 비교하면 안된다.
-        // 관련 코드 [여기의 'remove-note'](/src/code-prism/PrismTreeProvider.ts#407)
-        // 관련 코드 [Prism.removeNote](/src/code-prism/Prism.ts#238)
+        // 관련 코드 [[al=80b55392ce1c97a9735da595fc4844ac]]
         const issueItem = this.items.find(item => item instanceof IssueItem && item.issue.id === data.issue?.id)
         if (!issueItem) {
           vscode.window.showWarningMessage('remove-issue: No exist data.issue')

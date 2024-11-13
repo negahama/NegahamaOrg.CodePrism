@@ -254,9 +254,15 @@ export namespace PrismLinkDetector {
               return
             }
 
-            const linkTitle = '🔗 Open linked document (by Code Prism)'
+            const uri = vscode.Uri.file(result.fileName)
+            const content = PrismFileSystem.getDocContent(
+              vscode.Uri.from({
+                ...uri,
+                fragment: result.fragment,
+              })
+            )
 
-            let markdown: string = ''
+            let link: string = ''
             if (result.fileName.endsWith('.md')) {
               // 링크되어진 markdown 문서의 일부를 tooltip에 표시한다.
               // 이때 툴팁에 링크 하나가 제공되는데 이 링크를 클릭하면 해당 markdown 문서의 preview가 오픈된다.
@@ -266,36 +272,25 @@ export namespace PrismLinkDetector {
               // 배열로 전달되어야 한다.
               // 프리뷰의 인수로 전달되는 uri는 fragment를 포함할 수 없다.
               // [concept](/doc/concept.md) 참고
-              const uri = vscode.Uri.file(result.fileName)
               const args = [uri]
               const commandId = 'markdown.showPreviewToSide'
-              // const commandId = 'CodePrism.command.showMarkdownPreviewToSide'
               const encodedArgs = encodeURIComponent(JSON.stringify(args))
               const openCommandUri = vscode.Uri.parse(`command:${commandId}?${encodedArgs}`)
-              // <div> 태그 시작과 끝부분에 보면 \n이 사용되고 있다.
-              // 앞부분의 \n은 # title로 시작하는 markdown을 인식되게 하기 위한 것이다.
-              // 뒷부분의 \n은 ```으로 끝나는 경우 </div>까지 markdown의 일부로 인식되지 않게 하기 위해서이다.
-              markdown = `[${linkTitle}](${openCommandUri}) <div>\n${PrismFileSystem.getDocContent(
-                vscode.Uri.from({
-                  ...vscode.Uri.file(result.fileName),
-                  fragment: result.fragment,
-                })
-              )}\n</div>`
+              link = `${openCommandUri}`
             } else {
               // markdown 문서가 아닌 경우에는 코드로 표시한다.
               // markdown 문서는 tooltip에서 open document 링크를 클릭하면 preview가 오픈되지만
               // 나머지 파일은 링크를 클릭하면 그냥 해당 파일을 오픈한다. 이 과정은 별도의 command로 처리될 필요가 없다.
               // 대신 링크를 클릭해서 정상적으로 파일이 오픈되게 하려면 링크에 file scheme이 필요하다.
               // 그리고 fragment를 포함시킨다.
-              const uri = vscode.Uri.from({
-                ...vscode.Uri.file(result.fileName),
-                fragment: result.fragment,
-              })
-              const link = `file:///${result.fileName}#${result.fragment}`
-              const content = PrismFileSystem.getDocContent(uri, 10)
-
-              markdown = `[${linkTitle}](${link}) <div>\n${content}\n</div>`
+              link = `file:///${result.fileName}#${result.fragment}`
             }
+
+            // <div> 태그 시작과 끝부분에 보면 \n이 사용되고 있다.
+            // 앞부분의 \n은 # title로 시작하는 markdown을 인식되게 하기 위한 것이다.
+            // 뒷부분의 \n은 ```으로 끝나는 경우 </div>까지 markdown의 일부로 인식되지 않게 하기 위해서이다.
+            const linkTitle = '🔗 Open linked document (by Code Prism)'
+            const markdown = `[${linkTitle}](${link}) <div>\n${content}\n</div>`
 
             const markdownString = new vscode.MarkdownString(markdown)
             markdownString.supportHtml = true

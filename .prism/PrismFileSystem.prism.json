@@ -8,10 +8,10 @@
       "title": "`static readFile(fileName: string): string {` at src\\code-prism\\PrismFileSystem.ts#298",
       "source": {
         "file": "/src/code-prism/PrismFileSystem.ts",
-        "startLine": 228,
-        "startColumn": 9,
-        "endLine": 228,
-        "endColumn": 17
+        "startLine": 219,
+        "startColumn": 0,
+        "endLine": 220,
+        "endColumn": 0
       },
       "notes": [
         {
@@ -28,10 +28,10 @@
       "title": "`content = fs.readFileSync(fsPath, 'utf8')` at src\\code-prism\\PrismFileSystem.ts#262",
       "source": {
         "file": "/src/code-prism/PrismFileSystem.ts",
-        "startLine": 286,
-        "startColumn": 6,
-        "endLine": 286,
-        "endColumn": 47
+        "startLine": 277,
+        "startColumn": 0,
+        "endLine": 278,
+        "endColumn": 0
       },
       "notes": [
         {
@@ -39,7 +39,7 @@
           "category": "Todo",
           "importance": "Medium",
           "createdAt": "2024-11-12T02:08:39.264Z",
-          "content": "편집중인 파일의 경우 문제가 될 수 있으므로 openTextDocument를 사용해야 할 것 같다."
+          "content": "편집중인 파일의 경우 문제가 될 수 있으므로 openTextDocument를 사용해야 할 것 같다.\n\nreadFile() 처럼 비동기 함수로 바꾸면 꼬리에 꼬리를 물고 비동기 함수로 바뀌어야 하는데 부담이 된다.\n"
         }
       ]
     }

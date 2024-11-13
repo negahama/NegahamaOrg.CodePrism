@@ -110,13 +110,13 @@ These efforts of Code Prism are just about utilizing the existing VS Code functi
 
 ![screen shot](https://github.com/negahama/NegahamaOrg.CodePrism/blob/main/images/Screenshot182825.png?raw=true)
 
-#### copy adaptive link
+#### Adaptive Link
 
 This feature creates links to specific parts of the code.
 
 Links that allow you to refer to a particular part of the code are useful sometimes
 
-If you want, You can select some part of your code and generate the link by context menu or keyboard shortcut(default `Ctrl+Alt+C, Ctrl+Alt+C`) and then youn can attach the generated link to any document(include codes) by using `Ctrl + V`.
+If you want, You can select some part of your code and generate the link by context menu or keyboard shortcut(default `Ctrl+Alt+C, Ctrl+Alt+C`) and then you can attach the generated link to any document(include codes) by using `Ctrl+V`.
 
 Most of links to code is based on the location of the code.
 
@@ -142,7 +142,7 @@ mermaid offical site : https://mermaid.js.org/
 
 ### 1.4.4 - November 13, 2024
 
-I combined the code-anchor link and the 1+1 link to make it the [adaptive link](#copy-adaptive-link)
+I combined the code-anchor link and the 1+1 link to make it the [adaptive link](#adaptive-link)
 
 ### 1.4.3 - November 12, 2024
 

@@ -108,7 +108,6 @@ export namespace PrismSearchEditor {
             let fsPath: string = ''
             if (ref instanceof vscode.Location) {
               fsPath = ref.uri.fsPath
-              console.log('🚀 ~ vscode.commands.registerCommand ~ fsPath:', fsPath)
             } else {
               fsPath = ref.targetUri.fsPath
             }
@@ -128,21 +127,7 @@ export namespace PrismSearchEditor {
           }
           const includes = includeList.join(',')
 
-          /* 사용 가능한 arguments
-          {
-            query: string,
-            includes: string,
-            excludes: string,
-            contextLines: number,
-            wholeWord: boolean,
-            caseSensitive: boolean,
-            regexp: boolean,
-            useIgnores: boolean,
-            showIncludesExcludes: boolean,
-            triggerSearch: boolean,
-            focusResults: boolean,
-          }
-          */
+          // 사용 가능한 arguments [[al=c0a2438db86886cf89aee7aa0ec0ea1b]]
           await vscode.commands.executeCommand('search.action.openNewEditor', {
             query: symbol,
             includes,

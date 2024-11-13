@@ -41,11 +41,10 @@ export namespace PrismRefDiagramGenerator {
           references.forEach((reference, index) => {
             let targetName = PrismPath.getRelativePath(reference.uri.fsPath)
             const targetLine = reference.range.start.line + 1
-            // console.log(`Reference found at ${targetName}:${targetLine}`)
 
             // targetName의 길이가 너무 길면 뒤에서 20자만 취한다.
             if (targetName.length > 20) {
-              targetName = '...' + targetName.substring(targetName.length - 20, 20)
+              targetName = '...' + targetName.substring(targetName.length - 20)
             }
 
             diagram.push(`  0(${symbol}) --> ${index + 1}(${targetName}:${targetLine})`)

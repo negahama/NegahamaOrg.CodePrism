@@ -6,7 +6,7 @@ import { PrismManager } from './PrismManager'
 import { PrismComment, PrismCommentController } from './PrismCommentController'
 import { PrismItem, IssueItem, PrismTreeViewElement, PrismTreeProvider } from './PrismTreeProvider'
 import { PrismFileViewer } from './PrismFileViewer'
-import { output } from './PrismOutputChannel.js'
+import { output } from './PrismOutputChannel'
 
 /**
  * Activates the Code Prism extension.
@@ -139,7 +139,7 @@ export async function prism_activate(context: vscode.ExtensionContext) {
   // 2) PrismTreeView의 PrismItem의 context menu에서 show icon를 클릭
   // 1)의 경우에는 command를 직접 호출하는 경우이므로 argument를 prism으로 할 수 있지만
   // 2)의 경우에는 VS Code에 의해서 PrismItem이 전달되기 때문에 1)의 경우도 인수를 PrismItem으로 하여 동일하게 처리되게 하였다.
-  // [PrismItem의 this.command argument](/src\code-prism\PrismTreeProvider.ts#30-35) 참고
+  // [[al=5d52428ba8c1ec2e52b3482499e70c4a]] 참고
   context.subscriptions.push(
     vscode.commands.registerCommand('CodePrism.command.prismFile.show', (item: PrismItem) => {
       PrismFileViewer.showPrismViewer(item.prism)

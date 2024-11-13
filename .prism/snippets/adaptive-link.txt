@@ -1,0 +1,5 @@
+b930919781f46cfb8bd787d7abd05731,d:\Samuel\NegahamaOrg.CodePrism\src\code-prism\PrismLinkDetector.ts,289,291
+1fe686d9bf6b70b79eaba4845eda4e1e,d:\Samuel\NegahamaOrg.CodePrism\src\code-prism\PrismCommands.ts,137,142
+5d52428ba8c1ec2e52b3482499e70c4a,d:\Samuel\NegahamaOrg.CodePrism\src\code-prism\PrismTreeProvider.ts,29,34
+c0a2438db86886cf89aee7aa0ec0ea1b,d:\Samuel\NegahamaOrg.CodePrism\src\code-prism\PrismSearchEditor.ts,61,75
+80b55392ce1c97a9735da595fc4844ac,d:\Samuel\NegahamaOrg.CodePrism\src\code-prism\Prism.ts,240,260

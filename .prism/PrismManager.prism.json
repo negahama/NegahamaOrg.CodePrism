@@ -42,6 +42,26 @@
           "content": "모든 노트가 다 지워지면 관련 prism 파일도 삭제되어야 한다."
         }
       ]
+    },
+    {
+      "id": "679ddd9b24149c2cd0d3a0397f92437f",
+      "title": "`static findPrismBySource(source: string): Prism | undefined {` at src\\code-prism\\PrismManager.ts#289",
+      "source": {
+        "file": "/src/code-prism/PrismManager.ts",
+        "startLine": 289,
+        "startColumn": 9,
+        "endLine": 289,
+        "endColumn": 9
+      },
+      "notes": [
+        {
+          "id": "a8ac860f11784491d49a0c27ec4756d1",
+          "category": "Docs",
+          "importance": "Medium",
+          "createdAt": "2024-11-13T06:31:27.983Z",
+          "content": "Prism file이 target 문서 하나당 하나씩 존재하는 것을 전제로 하고 있다.  \r\n따라서 해당 prism 파일내의 모든 issue의 source는 동일한 문서이다.  \r\n상위 컨테이너인 prism에 파일 정보가 있으면 저장할 것들이 줄어든다.\r\n\r\n하지만 프리즘 파일 없이 이슈를 독립적으로 구성하는 것도 고려하고 있어 일단은 구조를 유지하기로 한다.\r\n"
+        }
+      ]
     }
   ]
 }

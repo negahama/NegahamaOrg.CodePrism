@@ -25,15 +25,6 @@ export class PrismFileSystem {
   }
 
   /**
-   * Checks if the Prism documentation folder exists.
-   *
-   * @returns {boolean} `true` if the Prism documentation folder exists, otherwise `false`.
-   */
-  static isPrismDocsFolderExists(): boolean {
-    return fs.existsSync(PrismPath.getPrismDocsFolderPath())
-  }
-
-  /**
    * Checks if a prism file with the given name exists.
    *
    * @param name - The name of the prism file to check.
@@ -314,7 +305,18 @@ export class PrismFileSystem {
         isMore = true
       }
     }
-    const selectedLines = lines.slice(startLine, endLine)
+
+    let selectedLines = lines.slice(startLine, endLine)
+
+    // 모든 라인이 지나치게 indent되어져 있을 수 있으므로 이를 조정한다.
+    let minIndent = Number.MAX_SAFE_INTEGER
+    selectedLines.forEach(line => {
+      const indent = line.search(/\S/)
+      if (indent >= 0) {
+        minIndent = Math.min(minIndent, indent)
+      }
+    })
+    selectedLines = selectedLines.map(line => line.substring(minIndent))
 
     if (ext !== '.md') {
       // markdown이 아닌 경우에는 코드로 표시하며 lineLimit와 fragment를 적용한다.

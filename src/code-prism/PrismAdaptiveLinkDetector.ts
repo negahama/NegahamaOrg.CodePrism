@@ -81,8 +81,8 @@ export namespace PrismAdaptiveLinkDetector {
   }
 
   /**
-   * Saves the adaptive link data to a file. The data is collected from the `codeAnchorMap`
-   * and written to a file in CSV format. Each entry in the `codeAnchorMap` is written as a
+   * Saves the adaptive link data to a file. The data is collected from the `linkMap`
+   * and written to a file in CSV format. Each entry in the `linkMap` is written as a
    * line in the file with the format: `key,fileName,startLine,endLine`.
    *
    * The file is saved using the `PrismFileSystem.saveFile` method.
@@ -98,7 +98,7 @@ export namespace PrismAdaptiveLinkDetector {
   }
 
   /**
-   * Appends or updates a link in the `codeAnchorMap` with the provided name, path, start line, and end line.
+   * Appends or updates a link in the `linkMap` with the provided name, path, start line, and end line.
    *
    * @param name - The name of the link to append or update.
    * @param path - The file path associated with the link.
@@ -330,15 +330,14 @@ export namespace PrismAdaptiveLinkDetector {
               return
             }
 
-            const file = vscode.Uri.from({
-              ...vscode.Uri.file(info.fileName),
-              fragment: `${info.startLine}-${info.endLine}`,
-            })
-            const content = PrismFileSystem.getDocContent(file, 10)
+            const content = PrismFileSystem.getDocContent(
+              vscode.Uri.from({
+                ...vscode.Uri.file(info.fileName),
+                fragment: `${info.startLine}-${info.endLine}`,
+              })
+            )
 
-            // <div> 태그 시작과 끝부분에 보면 \n이 사용되고 있다.
-            // 앞부분의 \n은 # title로 시작하는 markdown을 인식되게 하기 위한 것이다.
-            // 뒷부분의 \n은 ```으로 끝나는 경우 </div>까지 markdown의 일부로 인식되지 않게 하기 위해서이다.
+            // [[al=b930919781f46cfb8bd787d7abd05731]]
             const title = '🔗 Show code snippet (by Code Prism)'
             const markdown = `${title} <div>\n${content}\n</div>`
             const markdownString = new vscode.MarkdownString(markdown)

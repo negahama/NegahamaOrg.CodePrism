@@ -8,9 +8,9 @@
       "title": "`vscode.window.showInformationMessage(message.command + `: found-${result.note.id}`)` at src\\code-prism\\PrismFileViewer.ts#395",
       "source": {
         "file": "/src/code-prism/PrismFileViewer.ts",
-        "startLine": 393,
+        "startLine": 424,
         "startColumn": 0,
-        "endLine": 400,
+        "endLine": 431,
         "endColumn": 0
       },
       "notes": [

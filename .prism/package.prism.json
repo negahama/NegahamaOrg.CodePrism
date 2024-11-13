@@ -8,9 +8,9 @@
       "title": "`\"contents\": \"No Prism File yet.\\nThe prism file will be automatically made by...\\n1. clicking the [+] button in editor view's left area\\n2. selecting 'Add new issue' in editor view's context menu.\\nTo learn more about how to use Code Prism in VS Code, please visit [here](https://github.com/negahama/NegahamaOrg.CodePrism/issues)\"` at package.json#237",
       "source": {
         "file": "/package.json",
-        "startLine": 237,
+        "startLine": 232,
         "startColumn": 0,
-        "endLine": 238,
+        "endLine": 233,
         "endColumn": 0
       },
       "notes": [

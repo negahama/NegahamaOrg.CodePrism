@@ -104,6 +104,11 @@ export namespace PrismPath {
     return path.join(getPrismFolderPath(), PRISM_DOCS_FOLDER_NAME)
   }
 
+  /**
+   * Retrieves the file path to the 'snippets' folder within the Prism directory.
+   *
+   * @returns {string} The full path to the 'snippets' folder.
+   */
   export function getPrismSnippetFolderPath(): string {
     return path.join(getPrismFolderPath(), 'snippets')
   }
