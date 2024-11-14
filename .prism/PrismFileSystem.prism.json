@@ -8,9 +8,9 @@
       "title": "`static readFile(fileName: string): string {` at src\\code-prism\\PrismFileSystem.ts#298",
       "source": {
         "file": "/src/code-prism/PrismFileSystem.ts",
-        "startLine": 219,
+        "startLine": 220,
         "startColumn": 0,
-        "endLine": 220,
+        "endLine": 221,
         "endColumn": 0
       },
       "notes": [
@@ -24,22 +24,22 @@
       ]
     },
     {
-      "id": "ce745d4d06c554c391f56ac9ef91e2b8",
-      "title": "`content = fs.readFileSync(fsPath, 'utf8')` at src\\code-prism\\PrismFileSystem.ts#262",
+      "id": "8f0a38e070ea9c9bcab008792d0d1540",
+      "title": "`const prismDocsFolderPath = path.join(PrismPath.getPrismFolderPath(), PRISM_DOCS_FOLDER_NAME)` at src\\code-prism\\PrismFileSystem.ts#149",
       "source": {
         "file": "/src/code-prism/PrismFileSystem.ts",
-        "startLine": 277,
+        "startLine": 149,
         "startColumn": 0,
-        "endLine": 278,
+        "endLine": 149,
         "endColumn": 0
       },
       "notes": [
         {
-          "id": "5df1016e727a5911d41f7c08d7a3fbae",
-          "category": "Todo",
+          "id": "be55cace3ab9ba967d06c9efd1c000dc",
+          "category": "Docs",
           "importance": "Medium",
-          "createdAt": "2024-11-12T02:08:39.264Z",
-          "content": "편집중인 파일의 경우 문제가 될 수 있으므로 openTextDocument를 사용해야 할 것 같다.\n\nreadFile() 처럼 비동기 함수로 바꾸면 꼬리에 꼬리를 물고 비동기 함수로 바뀌어야 하는데 부담이 된다.\n"
+          "createdAt": "2024-11-14T01:43:13.639Z",
+          "content": "또 다른 방법을 참고용으로 남겨둔다.\r\n\r\n```ts\r\nconst root = vscode.Uri.file(this.getPrismFolderPath() ?? '')\r\n\r\nlet currentPath = root\r\n\r\nconst folders = PRISM_DOCS_FOLDER_NAME.split('/')\r\n\r\nfor (const folder of folders) {\r\n    const files = await vscode.workspace.fs.readDirectory(currentPath)\r\n    const target = files.find(([name, type]) => type === vscode.FileType.Directory && name === folder)\r\n    if (!target) {\r\n    return null\r\n    }\r\n    // Update the current path\r\n    currentPath = vscode.Uri.joinPath(currentPath, folder)\r\n}\r\n\r\nreturn `${root.path}/${PRISM_DOCS_FOLDER_NAME}`\r\n```\r\n"
         }
       ]
     }

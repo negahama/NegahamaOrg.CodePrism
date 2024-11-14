@@ -208,7 +208,7 @@ export class PrismFileViewer {
    * @param issue - The `Issue` object containing the source file path and selection range.
    */
   static openSourceFile(issue: Issue) {
-    const uri = vscode.Uri.file(PrismPath.getWorkspacePath() + issue.source.file)
+    const uri = vscode.Uri.file(PrismPath.getAbsolutePath(issue.source.file))
     const selection = new vscode.Selection(
       new vscode.Position(issue.source.startLine - 1, issue.source.startColumn),
       new vscode.Position(issue.source.endLine - 1, issue.source.endColumn)
@@ -312,7 +312,7 @@ export class PrismFileViewer {
    */
   static getArticle(): string {
     const getIssue = (issue: Issue) => {
-      const sourcePath = (PrismPath.getWorkspacePath() + issue.source.file).replace(/\\/g, '/')
+      const sourcePath = PrismPath.getAbsolutePath(issue.source.file).replace(/\\/g, '/')
       // const sourceLink: string = `<a href="file:///${sourcePath}">` + sourcePath + '</a>'
       // prettier-ignore
       return `
@@ -328,7 +328,7 @@ export class PrismFileViewer {
                 <li>category: ${note.category}</li>
                 <li>importance: ${note.importance}</li>
                 <li>createdAt: ${note.createdAt}</li>
-                <li>link: <a href="#" onclick="createOrOpenLink(${safeId})">
+                <li>link: <a href="Create or Open Link" onclick="createOrOpenLink(${safeId})">
                   ${note.link ? 'Open Markdown' : 'Create Markdown'}</a>
                 </li>
               </ul></div>

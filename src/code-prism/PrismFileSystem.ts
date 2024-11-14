@@ -145,7 +145,8 @@ export class PrismFileSystem {
       fs.mkdirSync(prismFolderPath)
     }
 
-    const prismDocsFolderPath = PrismPath.getPrismDocsFolderPath()
+    const PRISM_DOCS_FOLDER_NAME = 'docs'
+    const prismDocsFolderPath = path.join(PrismPath.getPrismFolderPath(), PRISM_DOCS_FOLDER_NAME)
     if (!fs.existsSync(prismDocsFolderPath)) {
       fs.mkdirSync(prismDocsFolderPath)
     }
@@ -267,14 +268,16 @@ export class PrismFileSystem {
    * - If the content is truncated, a `... <more>` indicator is appended to the content.
    * - In case of an error while reading the file, the function returns `# No content` and logs the error to the console.
    */
-  static getDocContent(fileName: string | vscode.Uri, lineLimit: number = 10): string {
+  static async getDocContent(fileName: string | vscode.Uri, lineLimit: number = 10): Promise<string> {
     const fsPath = fileName instanceof vscode.Uri ? fileName.fsPath : fileName
     const fragment = fileName instanceof vscode.Uri ? fileName.fragment : ''
     const ext = path.extname(fsPath)
 
     let content: string = '# No content'
     try {
-      content = fs.readFileSync(fsPath, 'utf8')
+      await vscode.workspace.openTextDocument(vscode.Uri.file(fsPath)).then(document => {
+        content = document.getText()
+      })
     } catch (err) {
       console.error(err)
       return content

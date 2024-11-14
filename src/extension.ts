@@ -3,6 +3,7 @@
 import * as vscode from 'vscode'
 
 // import { language_model_test } from './language-model-test.js'
+import { PrismPath } from './code-prism/PrismPath.js'
 import { prism_activate } from './code-prism/PrismCommands.js'
 import { PrismDocDetector } from './code-prism/PrismDocDetector'
 import { PrismLinkDetector } from './code-prism/PrismLinkDetector'
@@ -21,6 +22,9 @@ export async function activate(context: vscode.ExtensionContext) {
   vscode.window.showInformationMessage('Code Prism is active!')
 
   // language_model_test()
+
+  PrismPath.activate(context)
+  output.log('activated prism-path')
 
   prism_activate(context)
   output.log('activated prism')

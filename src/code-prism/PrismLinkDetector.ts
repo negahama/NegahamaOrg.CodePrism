@@ -237,11 +237,7 @@ export namespace PrismLinkDetector {
      */
     context.subscriptions.push(
       vscode.languages.registerHoverProvider('*', {
-        provideHover(
-          document: vscode.TextDocument,
-          position: vscode.Position,
-          token: vscode.CancellationToken
-        ): vscode.ProviderResult<vscode.Hover> {
+        async provideHover(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken) {
           // Get the range of the word at the position where the hover was invoked
           const range = document.getWordRangeAtPosition(position, linkPattern)
           if (range) {
@@ -255,12 +251,7 @@ export namespace PrismLinkDetector {
             }
 
             const uri = vscode.Uri.file(result.fileName)
-            const content = PrismFileSystem.getDocContent(
-              vscode.Uri.from({
-                ...uri,
-                fragment: result.fragment,
-              })
-            )
+            const content = await PrismFileSystem.getDocContent(vscode.Uri.from({ ...uri, fragment: result.fragment }))
 
             let link: string = ''
             if (result.fileName.endsWith('.md')) {

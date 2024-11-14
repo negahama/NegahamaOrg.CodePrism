@@ -285,7 +285,7 @@ export class DefinitionViewProvider implements vscode.WebviewViewProvider {
           if (!command) {
             return
           }
-          list.push(`<li><a href="#" id="${command.id}">${command.label}</a></li>`)
+          list.push(`<li><a href="${command.label}" id="${command.id}">${command.label}</a></li>`)
         })
         list.push('</ul>')
       })

@@ -37,14 +37,12 @@ export namespace PrismAdaptiveLinkDetector {
    * Retrieves the full file path for the adaptive link file.
    *
    * This function constructs the full path to the 'adaptive-link.txt' file
-   * located within the Prism snippet folder. It uses the `PrismPath.getPrismSnippetFolderPath()`
-   * method to get the base folder path and then joins it with the file name.
+   * located within the Prism snippet folder.
    *
    * @returns {string} The full file path to the 'adaptive-link.txt' file.
    */
-  function getAdaptiveLinkFileFullName() {
-    const folderPath = PrismPath.getPrismSnippetFolderPath()
-    return path.join(folderPath, 'adaptive-link.txt')
+  function getAdaptiveLinkFileFullName(): string {
+    return path.join(PrismPath.getPrismFolderPath(), 'snippets', 'adaptive-link.txt')
   }
 
   /**
@@ -253,7 +251,7 @@ export namespace PrismAdaptiveLinkDetector {
         const link = `[[al=${name}]]`
         vscode.env.clipboard.writeText(link)
 
-        appendLink(name, path.join(PrismPath.getWorkspacePath(), path2), range.start.line + 1, range.end.line + 1)
+        appendLink(name, PrismPath.getAbsolutePath(path2), range.start.line + 1, range.end.line + 1)
         // 종료 시에만 저장한다
         // saveAdaptiveLinkFile()
       })
@@ -309,11 +307,7 @@ export namespace PrismAdaptiveLinkDetector {
 
     context.subscriptions.push(
       vscode.languages.registerHoverProvider('*', {
-        provideHover(
-          document: vscode.TextDocument,
-          position: vscode.Position,
-          token: vscode.CancellationToken
-        ): vscode.ProviderResult<vscode.Hover> {
+        async provideHover(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken) {
           // Get the range of the word at the position where the hover was invoked
           const range = document.getWordRangeAtPosition(position, linkPattern)
           if (range) {
@@ -330,7 +324,7 @@ export namespace PrismAdaptiveLinkDetector {
               return
             }
 
-            const content = PrismFileSystem.getDocContent(
+            const content = await PrismFileSystem.getDocContent(
               vscode.Uri.from({
                 ...vscode.Uri.file(info.fileName),
                 fragment: `${info.startLine}-${info.endLine}`,

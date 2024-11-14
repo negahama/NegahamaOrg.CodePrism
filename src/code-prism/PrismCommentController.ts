@@ -235,7 +235,7 @@ export class PrismCommentController {
 
         // 파일에 저장된 source의 line은 1 base이므로 실제 사용값인 0 base로 변경한다.
         const thread = this.commentController.createCommentThread(
-          vscode.Uri.file(PrismPath.getWorkspacePath() + issue.source.file),
+          vscode.Uri.file(PrismPath.getAbsolutePath(issue.source.file)),
           new vscode.Range(
             new vscode.Position(issue.source.startLine - 1, issue.source.startColumn),
             new vscode.Position(issue.source.endLine - 1, issue.source.endColumn)

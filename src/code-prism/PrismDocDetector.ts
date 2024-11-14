@@ -45,16 +45,14 @@ export namespace PrismDocDetector {
      * It then filters these links to find those associated with the provided source file URI.
      * The linked documents' URIs are adjusted if they are relative paths, and their content is retrieved.
      */
-    const getLinkedDocInfo = (uri: vscode.Uri): LinkedDoc[] => {
+    const getLinkedDocInfo = async (uri: vscode.Uri): Promise<LinkedDoc[]> => {
       const linkedFiles: string[] = []
-      const rootFolder = PrismPath.getWorkspacePath()
-      const prismFolder = PrismPath.getPrismFolderPath()
 
       //todo 이렇게 매번 계산하면 안된다.
       // uri를 소스로 하는 모든 issue에서 언급된 파일들을 모두 리턴한다.
       PrismManager.getAllPrisms().forEach(prism => {
         prism.issues.forEach(issue => {
-          const path = vscode.Uri.file(rootFolder + issue.source.file)
+          const path = vscode.Uri.file(PrismPath.getAbsolutePath(issue.source.file))
           if (path.fsPath === uri.fsPath) {
             issue.notes.forEach(note => {
               if (note.link) {
@@ -66,22 +64,26 @@ export namespace PrismDocDetector {
       })
 
       // result에서 현재 소스 파일과 연관된 파일들을 찾아서 linkedDocs에 저장한다.
-      return linkedFiles.map(linked => {
-        let uri = vscode.Uri.file(linked)
-        if (linked.startsWith('file:///./')) {
-          uri = vscode.Uri.file(prismFolder + linked.replace('file:///./', '/'))
-        }
+      const prismFolder = PrismPath.getPrismFolderPath()
+      return await Promise.all(
+        linkedFiles.map(async linked => {
+          let uri = vscode.Uri.file(linked)
+          if (linked.startsWith('file:///./')) {
+            uri = vscode.Uri.file(prismFolder + linked.replace('file:///./', '/'))
+          }
 
-        return { uri, content: PrismFileSystem.getDocContent(uri) }
-      })
+          return { uri, content: await PrismFileSystem.getDocContent(uri) }
+        })
+      )
     }
 
     // enable hover for all the relevant code files
     context.subscriptions.push(
       vscode.languages.registerHoverProvider(['*'], {
-        provideHover(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken) {
+        async provideHover(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken) {
           const mdsArray: vscode.MarkdownString[] = []
-          getLinkedDocInfo(document.uri).forEach(doc => {
+          const infos = await getLinkedDocInfo(document.uri)
+          infos.forEach(doc => {
             const args = [doc.uri]
             const commandId = 'markdown.showPreviewToSide'
             const encodedArgs = encodeURIComponent(JSON.stringify(args))
@@ -122,7 +124,7 @@ export namespace PrismDocDetector {
           })
         }
 
-        const infos = getLinkedDocInfo(document.uri)
+        const infos = await getLinkedDocInfo(document.uri)
         if (infos.length <= 0) {
           vscode.window.showInformationMessage('🔒 No link detected.')
         } else {

@@ -8,15 +8,10 @@ export namespace PrismPath {
   export const PRISM_FOLDER_NAME = '.prism'
   export const PRISM_FILE_EXT = 'prism.json'
 
-  /**
-   * Retrieves the root path of the current workspace.
-   *
-   * @returns {string} The root path of the workspace if available, otherwise empty string.
-   *
-   * @remarks
-   * If no workspace is open, an error message is logged to the console.
-   */
-  export function getWorkspacePath(): string {
+  let workspacePath = ''
+  let prismFolderName = PRISM_FOLDER_NAME
+
+  export function activate(context: vscode.ExtensionContext) {
     // const document = vscode.window.activeTextEditor?.document
     // if (document) {
     //   return vscode.workspace.getWorkspaceFolder(document.uri)?.uri?.fsPath ?? ''
@@ -25,22 +20,43 @@ export namespace PrismPath {
     // 작업 영역의 루트 경로 가져오기
     const workspaceFolders = vscode.workspace.workspaceFolders
     if (workspaceFolders && workspaceFolders.length > 0) {
-      return workspaceFolders[0].uri.fsPath
+      workspacePath = workspaceFolders[0].uri.fsPath
     } else {
       console.error('작업 영역이 열려 있지 않습니다.')
     }
-    return ''
+
+    const settings = vscode.workspace.getConfiguration('CodePrism')
+    prismFolderName = settings.get<string>('config.PrismFolder') ?? PRISM_FOLDER_NAME
+
+    // 설정 변경 이벤트 리스너 등록
+    vscode.workspace.onDidChangeConfiguration(event => {
+      if (event.affectsConfiguration('CodePrism.config.PrismFolder')) {
+        const settings = vscode.workspace.getConfiguration('CodePrism')
+        prismFolderName = settings.get<string>('config.PrismFolder') ?? PRISM_FOLDER_NAME
+      }
+    })
+  }
+
+  /**
+   * Retrieves the root path of the current workspace.
+   * If no workspace is open, an error message is logged to the console.
+   * 관련 코드: [[al=52bccd72a41210a6132bba47507d5c92]]
+   *
+   * @returns {string} The root path of the workspace if available, otherwise empty string.
+   */
+  export function getWorkspacePath(): string {
+    return workspacePath
   }
 
   /**
    * Retrieves the name of the Prism folder from the workspace configuration.
    * If the configuration is not set, it returns the default Prism folder name.
+   * 관련 코드: [[al=8d859200413ba3c2a7089f0422173771]]
    *
    * @returns {string} The name of the Prism folder.
    */
   export function getPrismFolderName(): string {
-    const settings = vscode.workspace.getConfiguration('CodePrism')
-    return settings.get<string>('config.PrismFolder') ?? PRISM_FOLDER_NAME
+    return prismFolderName
   }
 
   /**
@@ -63,6 +79,16 @@ export namespace PrismPath {
   }
 
   /**
+   * Constructs an absolute path by joining the workspace path with the provided file path.
+   *
+   * @param filePath - The relative file path to be joined with the workspace path.
+   * @returns The absolute path as a string.
+   */
+  export function getAbsolutePath(filePath: string): string {
+    return path.join(PrismPath.getWorkspacePath(), filePath)
+  }
+
+  /**
    * Computes the relative path from the workspace path to the given file path.
    *
    * @param filePath - The absolute path of the file.
@@ -70,46 +96,5 @@ export namespace PrismPath {
    */
   export function getRelativePath(filePath: string): string {
     return path.relative(getWorkspacePath(), filePath)
-  }
-
-  /**
-   * Retrieves the path to the Prism documentation folder.
-   *
-   * @returns {string} The path to the Prism documentation folder.
-   */
-  export function getPrismDocsFolderPath(): string {
-    const PRISM_DOCS_FOLDER_NAME = 'docs'
-
-    // const root = vscode.Uri.file(this.getPrismFolderPath() ?? '')
-
-    // // Initialize the current path to the root
-    // let currentPath = root
-
-    // // Split the prism's docs into individual folders
-    // const folders = PRISM_DOCS_FOLDER_NAME.split('/')
-
-    // // Iterate through each folder in the prism's docs
-    // for (const folder of folders) {
-    //   const files = await vscode.workspace.fs.readDirectory(currentPath)
-    //   const target = files.find(([name, type]) => type === vscode.FileType.Directory && name === folder)
-    //   if (!target) {
-    //     return null
-    //   }
-    //   // Update the current path
-    //   currentPath = vscode.Uri.joinPath(currentPath, folder)
-    // }
-
-    // return `${root.path}/${PRISM_DOCS_FOLDER_NAME}`
-
-    return path.join(getPrismFolderPath(), PRISM_DOCS_FOLDER_NAME)
-  }
-
-  /**
-   * Retrieves the file path to the 'snippets' folder within the Prism directory.
-   *
-   * @returns {string} The full path to the 'snippets' folder.
-   */
-  export function getPrismSnippetFolderPath(): string {
-    return path.join(getPrismFolderPath(), 'snippets')
   }
 }
