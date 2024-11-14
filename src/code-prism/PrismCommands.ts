@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
-import * as path from 'path'
+import * as assert from 'assert'
 
-import { Issue, Prism } from './Prism'
+import { Issue } from './Prism'
 import { PrismManager } from './PrismManager'
 import { PrismComment, PrismCommentController } from './PrismCommentController'
 import { PrismItem, IssueItem, PrismTreeViewElement, PrismTreeProvider } from './PrismTreeProvider'
@@ -48,8 +48,8 @@ export async function prism_activate(context: vscode.ExtensionContext) {
   const commentController = new PrismCommentController(context)
 
   vscode.workspace.onDidChangeTextDocument(changeEvent => {
-    const prism = PrismManager.findPrismBySource(changeEvent.document.fileName)
-    if (!prism) {
+    const issues = PrismManager.findIssuesBySource(changeEvent.document.fileName)
+    if (issues.length === 0) {
       return
     }
 
@@ -90,7 +90,6 @@ export async function prism_activate(context: vscode.ExtensionContext) {
 
       // 코드를 Alt키로 위로 이동시키면 이동할 위쪽의 라인을 늘이고 현재의 라인을 줄인다.
       // 코드를 Alt키로 아래로 이동시키면 현재의 라인을 줄인 후 아래쪽의 라인을 늘인다.
-      const issues = PrismManager.findIssuesBySource(changeEvent.document.fileName)
       issues.forEach(issue => {
         let newLineCount = 0
         if (lineCount < 0) {
@@ -126,7 +125,8 @@ export async function prism_activate(context: vscode.ExtensionContext) {
     })
 
     if (needUpdate) {
-      PrismManager.updatePrism(prism)
+      assert.ok(issues.length > 0)
+      PrismManager.updateIssue(issues[0])
     }
   })
 
@@ -191,7 +191,7 @@ export async function prism_activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
     vscode.commands.registerCommand('CodePrism.command.issue.goto', (item: IssueItem) => {
-      PrismFileViewer.showPrismViewer(item.prism, item.issue)
+      PrismFileViewer.showPrismViewer(item.issue)
     })
   )
 
@@ -204,28 +204,21 @@ export async function prism_activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand(
       'CodePrism.command.issue.delete',
       (threadOrItem: vscode.CommentThread | IssueItem) => {
-        let prism: Prism | undefined
         let issue: Issue | undefined
 
         if (threadOrItem instanceof IssueItem) {
           const item = threadOrItem as IssueItem
-          prism = item.prism
           issue = item.issue
         } else {
-          // 인수가 IssueItem이면 prism, issue를 바로 얻을 수 있지만 CommentThread이면
-          // thread의 uri, contextValue(issue id가 저장되어져 있음)등을 통해서 찾아야 한다.
+          // 인수가 IssueItem이면 prism, issue를 바로 얻을 수 있지만
+          // CommentThread이면 thread의 contextValue(issue id가 저장되어져 있음)등을 통해서 찾아야 한다.
           const thread = threadOrItem as vscode.CommentThread
-          const prismName = path.parse(thread!.uri.fsPath).name
-          prism = PrismManager.getPrism(prismName)
-          if (prism) {
-            issue = prism.getIssue(thread.contextValue!)
-          }
+          issue = PrismManager.getIssue(thread.contextValue!)
         }
 
         // 이 명령이 어디에서 호출되어졌는지에 관계없이 화면 갱신은 remove-issue에서 처리한다.
-        if (prism && issue) {
-          prism.removeIssue(issue.id)
-          PrismManager.updatePrism(prism)
+        if (issue) {
+          PrismManager.deleteIssue(issue)
         }
       }
     )

@@ -24,7 +24,14 @@ publisher는 Prism 개체이고 발생하는 event에 따라서 subscriber는 �
 - 'create-prism' : Prism
 - 'delete-prism' : Prism
 - 'append-issue' : Issue
-- 'update-issue' : update-issue는 delete-issue와 append-issue로 구현되므로 별도로 존재하지 않는다
+- 'update-issue' :
+
+  Issue에 대한 update는 source property에 대한 update를 의미한다.  
+  note의 변경은 note event로 따로 처리하고 그외의 다른 property는 변경되지 않는다.  
+  source property의 변경은 comment controller의 mark 위치에만 영향을 미칠 뿐 따로 표시되거나 하지 않는데
+  comment controller는 자동적으로 처리되므로 결국 issue update는 다른 개체에게 알릴 필요가 없다.  
+  저장만 하면 된다.
+
 - 'remove-issue' : Issue
 - 'append-note' : Note
 - 'update-note' : Note

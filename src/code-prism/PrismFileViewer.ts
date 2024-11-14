@@ -123,10 +123,10 @@ export class PrismFileViewer {
    * @param prism The Prism object containing issues and notes.
    * @param issue Optional. The specific issue to open and navigate to.
    */
-  static async showPrismViewer(prism: Prism, issue?: Issue) {
-    if (!issue) {
+  static async showPrismViewer(prismOrIssue: Prism | Issue) {
+    if (prismOrIssue instanceof Prism) {
       // PrismItem을 클릭했을 때
-      this.prism = prism
+      this.prism = prismOrIssue
 
       // .prism.json 파일 자체를 표시한다.
       // openPrismJsonFile(prism)
@@ -146,9 +146,9 @@ export class PrismFileViewer {
       // 이 뷰가 최종적으로 active되는게 좋으므로 가장 마지막에 호출한다.
       this.panel = new PrismWebviewPanel(
         'code-prism-view',
-        `CodePrism:${prism.name}`,
+        `CodePrism:${this.prism.name}`,
         vscode.ViewColumn.One,
-        this.getWebviewContent(prism),
+        this.getWebviewContent(this.prism),
         (message: any) => {
           this.onReceiveMessage(message)
         }
@@ -156,7 +156,7 @@ export class PrismFileViewer {
     } else {
       // IssueItem을 클릭했을 때
       // 해당 소스파일을 열고, 해당 노트의 위치로 이동한다.
-      this.openSourceFile(issue)
+      this.openSourceFile(prismOrIssue)
     }
   }
 

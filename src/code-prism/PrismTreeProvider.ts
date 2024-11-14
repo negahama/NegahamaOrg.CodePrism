@@ -76,7 +76,7 @@ export class IssueItem extends vscode.TreeItem {
    * The icon is set to a comment icon.
    * The command executed is 'CodePrism.command.prismFile.show' with the current instance as an argument.
    */
-  constructor(public readonly prism: Prism, public readonly issue: Issue, public readonly parent?: PrismItem) {
+  constructor(public readonly issue: Issue, public readonly parent?: PrismItem) {
     const note = issue.notes && issue.notes.length > 0 ? issue.notes[0] : undefined
     assert.ok(note, 'Issue must have at least one note')
 
@@ -222,7 +222,7 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<PrismTreeViewE
           if (element.prism.issues === undefined) {
             return Promise.resolve([])
           }
-          const issues = element.prism.issues.map(issue => new IssueItem(element.prism, issue, element))
+          const issues = element.prism.issues.map(issue => new IssueItem(issue, element))
           return Promise.resolve(issues)
         } else {
           return Promise.resolve([])
@@ -343,7 +343,6 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<PrismTreeViewE
           this.updatePrismItem(data.prism)
         }
       } else {
-        assert.ok(data.prism)
         assert.ok(data.issue)
 
         // Issue를 추가하려고 하는데 이미 동일한 IssueItem이 있는 경우
@@ -352,7 +351,7 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<PrismTreeViewE
           vscode.window.showWarningMessage('append-issue: item.issue === data.issue')
           this.reload()
         } else {
-          this.appendIssueItem(data.prism, data.issue)
+          this.appendIssueItem(data.issue)
         }
       }
     })
@@ -375,7 +374,6 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<PrismTreeViewE
           this.updatePrismItem(data.prism)
         }
       } else {
-        assert.ok(data.prism)
         assert.ok(data.issue)
 
         // this.items 자체가 IssueItem이기 때문에 tree인 경우와는 다르게 item 내부의 변화가 없다.
@@ -390,16 +388,14 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<PrismTreeViewE
           vscode.window.showWarningMessage('remove-issue: No exist data.issue')
           this.reload()
         } else {
-          this.deleteIssueItem(data.prism, data.issue)
+          this.deleteIssueItem(data.issue)
         }
       }
     })
 
     PrismManager.subscribe('update-note', (data: SubscribeType) => {
-      if (data.prism) {
-        assert.ok(data.issue)
-        this.updateIssueItem(data.prism, data.issue)
-      }
+      assert.ok(data.issue)
+      this.updateIssueItem(data.issue)
     })
 
     PrismManager.subscribe('remove-note', (data: SubscribeType) => {
@@ -426,7 +422,7 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<PrismTreeViewE
     } else {
       prisms.forEach(p => {
         p.getIssues().forEach(issue => {
-          this.appendIssueItem(p, issue)
+          this.appendIssueItem(issue)
         })
       })
     }
@@ -526,7 +522,7 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<PrismTreeViewE
       return
     }
 
-    this.items = this.items.filter(item => item.prism.name !== prism.name)
+    this.items = this.items.filter(item => item instanceof PrismItem && item.prism.name !== prism.name)
     this.refreshPrismView()
   }
 
@@ -561,21 +557,19 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<PrismTreeViewE
   /**
    * Finds an `IssueItem` in the `Prism` tree that matches the given `issue`.
    *
-   * @param prism - The `Prism` instance to search within.
    * @param issue - The `Issue` to find the corresponding `IssueItem` for.
    * @returns The `IssueItem` that matches the given `issue`, or `undefined` if no match is found.
    */
-  findIssueItem(prism: Prism, issue: Issue): IssueItem | undefined {
+  findIssueItem(issue: Issue): IssueItem | undefined {
     return this.items.find(item => item instanceof IssueItem && item.issue.id === issue.id) as IssueItem
   }
 
   /**
    * Appends a new issue item to the list of items and refreshes the prism view.
    *
-   * @param prism - The prism object to which the issue is related.
    * @param issue - The issue object to be appended.
    */
-  appendIssueItem(prism: Prism, issue: Issue) {
+  appendIssueItem(issue: Issue) {
     // tree view mode에서는 issue를 별도로 추가할 필요가 없다.
     // issue는 PrismItem의 children으로 getChildren()에서 처리된다.
     if (this.viewMode === 'tree') {
@@ -583,12 +577,12 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<PrismTreeViewE
     }
 
     // 동일한 ID의 IssueItem이 이미 있는 경우는 추가하지 않는다.
-    if (this.findIssueItem(prism, issue)) {
+    if (this.findIssueItem(issue)) {
       console.warn('appendIssueItem: already exist', issue.id)
       return
     }
 
-    this.items.push(new IssueItem(prism, issue))
+    this.items.push(new IssueItem(issue))
     this.refreshPrismView()
   }
 
@@ -597,13 +591,13 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<PrismTreeViewE
    *
    * @param name - The label of the item to be deleted.
    */
-  deleteIssueItem(prism: Prism, issue: Issue) {
+  deleteIssueItem(issue: Issue) {
     if (this.viewMode === 'tree') {
       return
     }
 
     // 동일한 ID의 IssueItem이 없는 경우를 확인한다.
-    if (!this.findIssueItem(prism, issue)) {
+    if (!this.findIssueItem(issue)) {
       console.warn('deleteIssueItem: no exist', issue.id)
       return
     }
@@ -617,15 +611,14 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<PrismTreeViewE
    * If the view mode is 'tree', the method currently does nothing (todo).
    * Otherwise, it finds the corresponding issue item and refreshes it.
    *
-   * @param prism - The Prism object associated with the issue.
    * @param issue - The Issue object to be updated.
    */
-  updateIssueItem(prism: Prism, issue: Issue) {
+  updateIssueItem(issue: Issue) {
     if (this.viewMode === 'tree') {
       this.refreshPrismView()
     } else {
       // 동일한 ID의 IssueItem이 없는 경우를 확인한다.
-      const issueItem = this.findIssueItem(prism, issue)
+      const issueItem = this.findIssueItem(issue)
       if (!issueItem) {
         console.warn('updateIssueItem: no exist', issue.id)
         return

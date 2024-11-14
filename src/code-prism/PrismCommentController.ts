@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 import * as assert from 'assert'
 import * as path from 'path'
 
-import { Issue, Note, Prism, uuid } from './Prism'
+import { Issue, Note, Prism } from './Prism'
 import { PrismPath } from './PrismPath'
 import { PrismFileSystem } from './PrismFileSystem'
 import { PrismLinkDetector } from './PrismLinkDetector'
@@ -289,10 +289,9 @@ export class PrismCommentController {
     title = title.trim()
 
     // prism이 없으면 새로 만든다.
-    const prism = PrismManager.getPrism(prismName, true)
+    let prism = PrismManager.getPrism(prismName)
     if (!prism) {
-      vscode.window.showErrorMessage('Failed to get Prism: ' + prismName)
-      return
+      prism = PrismManager.createPrismAndFile(prismName)
     }
 
     // context menu에서 issue를 추가할 때는 이미 issue가 있는지를 title말고 다른 것으로는 알 방법이 없다.
@@ -302,8 +301,7 @@ export class PrismCommentController {
       // issue가 없으면 새로 만든다.
       // issue를 만들고 note를 추가한 다음에 appendIssue를 호출해야 한다.
       // issue가 새로 만들어진 경우에는 append-issue만 발생시킨다.
-      issue = this.createIssueDetails(title, source, range)
-      issue.notes.push(note)
+      issue = this.createIssueDetails(prism, title, source, range, note)
       prism.appendIssue(issue)
     } else {
       // issue가 있으면 default note만 추가
@@ -334,23 +332,19 @@ export class PrismCommentController {
    * The source file path is stored relative to the workspace root, which must start with a '/'.
    * The line and column numbers in the range are adjusted to be 1-based.
    */
-  createIssueDetails(title: string, source: string, range: vscode.Range): Issue {
-    const issue: Issue = {
-      id: uuid(),
-      title,
-      source: {
-        // source file은 workspace root 경로로 저장한다.
-        // 이때 마크다운에서 workspace root 경로는 반드시 / 로 시작해야 하기 때문에
-        // CodePrism 전체에서 workspace root 경로는 모두 / 로 시작하도록 정해져 있다.
-        file: '/' + PrismPath.getRelativePath(source).replace(/\\/g, '/'),
-        startLine: range.start.line + 1,
-        startColumn: range.start.character,
-        endLine: range.end.line + 1,
-        endColumn: range.end.character,
-      },
-      notes: [],
-    }
+  createIssueDetails(prism: Prism, title: string, source: string, range: vscode.Range, note: Note): Issue {
+    const issue = new Issue(prism, title, {
+      // source file은 workspace root 경로로 저장한다.
+      // 이때 마크다운에서 workspace root 경로는 반드시 / 로 시작해야 하기 때문에
+      // CodePrism 전체에서 workspace root 경로는 모두 / 로 시작하도록 정해져 있다.
+      file: '/' + PrismPath.getRelativePath(source).replace(/\\/g, '/'),
+      startLine: range.start.line + 1,
+      startColumn: range.start.character,
+      endLine: range.end.line + 1,
+      endColumn: range.end.character,
+    })
 
+    issue.notes.push(note)
     return issue
   }
 
@@ -396,15 +390,8 @@ export class PrismCommentController {
 
     thread.range = range
 
-    const prismName = path.parse(thread.uri.fsPath).name
-    const prism = PrismManager.getPrism(prismName)
-    if (!prism) {
-      console.error('error in changeIssuePosition: No prism, name: ' + prismName)
-      return
-    }
-
     // thread.contextValue는 issue의 id를 가지고 있다.
-    const issue = prism.getIssue(thread.contextValue!)
+    const issue = PrismManager.getIssue(thread.contextValue!)
     if (!issue) {
       console.error('error in changeIssuePosition: No issue')
       console.log('  thread.label:', thread.label?.trim() ?? '')
@@ -417,7 +404,7 @@ export class PrismCommentController {
     issue.source.endLine = range.end.line + 1
     issue.source.endColumn = range.end.character
 
-    PrismManager.updatePrism(prism)
+    PrismManager.updateIssue(issue)
   }
 
   /**
@@ -468,10 +455,9 @@ export class PrismCommentController {
     reply.thread.comments = [...reply.thread.comments, comment]
 
     // prism이 없으면 새로 만든다.
-    const prism = PrismManager.getPrism(prismName, true)
+    let prism = PrismManager.getPrism(prismName)
     if (!prism) {
-      vscode.window.showErrorMessage('Failed to get Prism: ' + prismName)
-      return
+      prism = PrismManager.createPrismAndFile(prismName)
     }
 
     const title = await this.getThreadTitle(reply.thread)
@@ -479,14 +465,13 @@ export class PrismCommentController {
     let issue = prism.getIssueByTitle(title)
     if (!issue) {
       // issue가 없으면 새로 만든다.
-      issue = this.createIssueDetails(title, source, reply.thread.range)
+      // issue를 만들고 note를 추가한 다음에 appendIssue를 호출해야 한다.
+      // issue가 새로 만들어진 경우에는 append-issue만 발생시킨다.
+      issue = this.createIssueDetails(prism, title, source, reply.thread.range, note)
 
       reply.thread.label = title
       reply.thread.contextValue = issue.id
 
-      // issue를 만들고 note를 추가한 다음에 appendIssue를 호출해야 한다.
-      // issue가 새로 만들어진 경우에는 append-issue만 발생시킨다.
-      issue.notes.push(note)
       prism.appendIssue(issue)
     } else {
       prism.appendNote(issue.id, note)
@@ -818,15 +803,8 @@ export class PrismCommentController {
     noteId: string,
     callback: (prism: Prism, issue: Issue, note: Note) => void
   ): void {
-    const prismName = path.parse(thread.uri.fsPath).name
-    const prism = PrismManager.getPrism(prismName)
-    if (!prism) {
-      console.error('error in getNodeFromThread: No prism, name: ' + prismName)
-      return
-    }
-
     // thread.contextValue는 issue의 id를 가지고 있다.
-    const issue = prism.getIssue(thread.contextValue!)
+    const issue = PrismManager.getIssue(thread.contextValue!)
     if (!issue) {
       console.error('error in getNodeFromThread: No issue')
       console.log('  thread.label:', thread.label?.trim() ?? '')
@@ -834,13 +812,14 @@ export class PrismCommentController {
       return
     }
 
-    const note = issue.notes.find(n => n.id === noteId)
+    const note = issue.findNote(noteId)
     if (!note) {
       console.error('error in deleteNote: No note, noteId: ' + noteId)
       return
     }
 
-    callback(prism, issue, note)
+    assert.ok(issue.prism)
+    callback(issue.prism, issue, note)
   }
 }
 

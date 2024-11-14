@@ -1,4 +1,5 @@
 import * as vscode from 'vscode'
+import * as assert from 'assert'
 
 import { Note, Issue, Prism } from './Prism'
 import { PrismPath } from './PrismPath'
@@ -131,6 +132,7 @@ export class PrismManager {
 
   /**
    * Creates a new Prism instance with the specified name and sets up its PubSub system.
+   * Prism 객체 자체만 생성하는 것이라서 issue에 대한 별도의 처리는 필요하지 않다.
    *
    * @param name - The name to assign to the new Prism instance.
    * @returns A new Prism instance with the specified name and PubSub system configured.
@@ -138,18 +140,6 @@ export class PrismManager {
   static createPrism(name: string) {
     const prism = new Prism()
     prism.name = name
-    prism.setPubSub(this.pubSub)
-    return prism
-  }
-
-  /**
-   * Creates an instance of `Prism` from a JSON object.
-   *
-   * @param json - The JSON object to convert into a `Prism` instance.
-   * @returns A new `Prism` instance.
-   */
-  static createPrismFromJson(json: any): Prism {
-    const prism = new Prism(json)
     prism.setPubSub(this.pubSub)
     return prism
   }
@@ -168,23 +158,21 @@ export class PrismManager {
     const json = JSON.parse(text)
 
     // JSON 객체를 사용하여 Prism 객체 생성 및 반환
-    return this.createPrismFromJson(json)
+    // 이때, Issue 객체의 prism property를 설정해 주어야 한다.
+    const prism = new Prism(json)
+    prism.issues.forEach(issue => (issue.prism = prism))
+    prism.setPubSub(this.pubSub)
+    return prism
   }
 
   /**
-   * Retrieves a prism by its name. If the prism does not exist and `forceCreate` is true,
-   * a new prism will be created.
+   * Retrieves a Prism instance by its name.
    *
-   * @param name - The name of the prism to retrieve.
-   * @param forceCreate - If true, a new prism will be created if one with the given name does not exist.
-   * @returns The prism with the specified name, or undefined if it does not exist and `forceCreate` is false.
+   * @param name - The name of the Prism to retrieve.
+   * @returns The Prism instance with the specified name, or undefined if not found.
    */
-  static getPrism(name: string, forceCreate: boolean = false): Prism | undefined {
-    const prism = this.prisms.find(p => p.name === name)
-    if (!prism && forceCreate) {
-      return this.createPrismAndFile(name)
-    }
-    return prism
+  static getPrism(name: string): Prism | undefined {
+    return this.prisms.find(p => p.name === name)
   }
 
   /**
@@ -215,19 +203,11 @@ export class PrismManager {
   }
 
   /**
-   * Creates a new Prism file with the given name.
+   * Creates a new prism with the given name, saves it to the file system,
+   * adds it to the list of prisms, and publishes a 'create-prism' event.
    *
-   * This method performs the following steps:
-   * 1. Retrieves the path to the Prism folder.
-   * 2. Creates the Prism folder if it does not exist.
-   * 3. Instantiates a new Prism object and assigns the provided name to it.
-   * 4. Saves the Prism file.
-   * 5. Creates a 'docs' folder inside the Prism folder if it does not exist.
-   * 6. Creates a markdown file for the Prism documentation inside the 'docs' folder.
-   * 7. Adds the new Prism object to the list of prisms.
-   *
-   * @param name - The name of the Prism file to be created.
-   * @returns The created Prism object.
+   * @param name - The name of the prism to create.
+   * @returns The created prism.
    */
   static createPrismAndFile(name: string): Prism {
     const prism = this.createPrism(name)
@@ -281,17 +261,52 @@ export class PrismManager {
   }
 
   /**
-   * Finds a prism by its source file path.
+   * Retrieves an issue by its ID from the list of prisms.
    *
-   * @param source - The source file path to search for.
-   * @returns The prism that matches the source file path, or `undefined` if no match is found.
+   * @param issueId - The unique identifier of the issue to be retrieved.
+   * @returns The issue with the specified ID, or `undefined` if not found.
    */
-  static findPrismBySource(source: string): Prism | undefined {
-    const path = '/' + PrismPath.getRelativePath(source).replace(/\\/g, '/')
+  static getIssue(issueId: string): Issue | undefined {
     for (const prism of this.prisms) {
-      if (prism.issues.filter(i => i.source.file === path)) {
-        return prism
+      const issue = prism.issues.find(i => i.id === issueId)
+      if (issue) {
+        return issue
       }
+    }
+    return undefined
+  }
+
+  /**
+   * Updates the given issue by saving its associated prism file.
+   *
+   * [[al=ec2692f9b51bc6db7d6894c28ad81d34]]
+   *
+   * @param issue - The issue object that contains the prism property.
+   * @throws Will throw an error if the issue does not have a prism property.
+   */
+  static updateIssue(issue: Issue) {
+    assert.ok(issue.prism, 'updateIssue: issue does not have a prism property')
+    PrismFileSystem.savePrismFile(issue.prism)
+  }
+
+  /**
+   * Deletes an issue with the specified ID from all prisms.
+   * If the issue is found in a prism, it is removed and the prism file is saved.
+   *
+   * @param issueId - The ID of the issue to be deleted.
+   */
+  static deleteIssue(issueId: string | Issue): void {
+    let issue: Issue | undefined
+    if (typeof issueId == 'string') {
+      issue = this.getIssue(issueId)
+    } else {
+      issue = issueId
+    }
+
+    if (issue) {
+      assert.ok(issue.prism, 'deleteIssue: issue does not have a prism property')
+      issue.prism.removeIssue(issue.id)
+      PrismFileSystem.savePrismFile(issue.prism)
     }
   }
 
@@ -319,7 +334,7 @@ export class PrismManager {
   static findPrismIssueNoteByNoteId(noteId: string): { prism: Prism; issue: Issue; note: Note } | undefined {
     for (const prism of this.prisms) {
       for (const issue of prism.issues) {
-        const note = issue.notes.find(n => n.id === noteId)
+        const note = issue.findNote(noteId)
         if (note) {
           return { prism, issue, note }
         }
