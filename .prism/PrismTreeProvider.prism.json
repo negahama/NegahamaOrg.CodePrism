@@ -8,9 +8,9 @@
       "title": "`PrismItem.updateDescription(prismItem)` at src\\code-prism\\PrismTreeProvider.ts#309",
       "source": {
         "file": "/src/code-prism/PrismTreeProvider.ts",
-        "startLine": 307,
+        "startLine": 309,
         "startColumn": 2,
-        "endLine": 307,
+        "endLine": 309,
         "endColumn": 12
       },
       "notes": [

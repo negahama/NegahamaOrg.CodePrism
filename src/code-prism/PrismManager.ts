@@ -95,7 +95,7 @@ export interface SubscribeType {
  * });
  *
  * // Create a new Prism
- * const newPrism = PrismManager.createPrism('MyPrism');
+ * const newPrism = PrismManager.createPrismAndFile('MyPrism');
  *
  * // Load all Prism files from the designated folder
  * const prisms = await PrismManager.loadPrismFiles();
@@ -131,41 +131,6 @@ export class PrismManager {
   private static prisms: Prism[] = []
 
   /**
-   * Creates a new Prism instance with the specified name and sets up its PubSub system.
-   * Prism 객체 자체만 생성하는 것이라서 issue에 대한 별도의 처리는 필요하지 않다.
-   *
-   * @param name - The name to assign to the new Prism instance.
-   * @returns A new Prism instance with the specified name and PubSub system configured.
-   */
-  static createPrism(name: string) {
-    const prism = new Prism()
-    prism.name = name
-    prism.setPubSub(this.pubSub)
-    return prism
-  }
-
-  /**
-   * 주어진 파일 경로에서 JSON 파일을 읽고 Prism 객체로 변환
-   *
-   * @param file - The path to the file to read and convert to a Prism object.
-   * @returns A Prism object created from the JSON content of the file.
-   */
-  static createPrismFromFile(file: string): Prism {
-    // 파일을 읽어 텍스트로 변환
-    const text = PrismFileSystem.readFile(file)
-
-    // 텍스트를 JSON 객체로 파싱
-    const json = JSON.parse(text)
-
-    // JSON 객체를 사용하여 Prism 객체 생성 및 반환
-    // 이때, Issue 객체의 prism property를 설정해 주어야 한다.
-    const prism = new Prism(json)
-    prism.issues.forEach(issue => (issue.prism = prism))
-    prism.setPubSub(this.pubSub)
-    return prism
-  }
-
-  /**
    * Retrieves a Prism instance by its name.
    *
    * @param name - The name of the Prism to retrieve.
@@ -185,6 +150,62 @@ export class PrismManager {
   }
 
   /**
+   * Creates a new prism with the given name, saves it to the file system,
+   * adds it to the list of prisms, and publishes a 'create-prism' event.
+   * Prism 객체 자체만 생성하는 것이라서 issue에 대한 별도의 처리는 필요하지 않다.
+   *
+   * @param name - The name of the prism to create.
+   * @returns The created prism.
+   */
+  static createPrismAndFile(name: string): Prism {
+    let prism = this.getPrism(name)
+    if (prism) {
+      vscode.window.showWarningMessage('The prism already exists.')
+      return prism
+    }
+
+    prism = new Prism()
+    prism.name = name
+    prism.setPubSub(this.pubSub)
+
+    PrismFileSystem.createPrismFile(prism)
+
+    this.prisms.push(prism)
+    this.publish('create-prism', { prism })
+    return prism
+  }
+
+  /**
+   * 주어진 파일 경로에서 JSON 파일을 읽고 Prism 객체로 변환
+   *
+   * @param file - The path to the file to read and convert to a Prism object.
+   * @returns A Prism object created from the JSON content of the file.
+   */
+  static createPrismFromFile(file: string): Prism {
+    // 파일을 읽어 텍스트로 변환
+    const text = PrismFileSystem.readFile(file)
+
+    // 텍스트를 JSON 객체로 파싱
+    const json = JSON.parse(text)
+
+    let prism = this.getPrism(json.name)
+    if (prism) {
+      vscode.window.showWarningMessage('The prism already exists.')
+      return prism
+    }
+
+    // JSON 객체를 사용하여 Prism 객체 생성 및 반환
+    // 이때, Issue 객체의 prism property를 설정해 주어야 한다.
+    prism = new Prism(json)
+    prism.issues.forEach(issue => (issue.prism = prism))
+    prism.setPubSub(this.pubSub)
+
+    this.prisms.push(prism)
+    this.publish('create-prism', { prism })
+    return prism
+  }
+
+  /**
    * Loads all Prism files from the designated Prism folder.
    *
    * This method checks if the Prism folder exists, and if it does, reads all files
@@ -197,26 +218,9 @@ export class PrismManager {
     this.prisms = []
     const files = await PrismFileSystem.getPrismFileNames()
     files.forEach(file => {
-      this.prisms.push(this.createPrismFromFile(file))
+      this.createPrismFromFile(file)
     })
     return this.prisms
-  }
-
-  /**
-   * Creates a new prism with the given name, saves it to the file system,
-   * adds it to the list of prisms, and publishes a 'create-prism' event.
-   *
-   * @param name - The name of the prism to create.
-   * @returns The created prism.
-   */
-  static createPrismAndFile(name: string): Prism {
-    const prism = this.createPrism(name)
-
-    PrismFileSystem.createPrismFile(prism)
-
-    this.prisms.push(prism)
-    this.publish('create-prism', { prism })
-    return prism
   }
 
   /**
@@ -228,7 +232,7 @@ export class PrismManager {
    * @returns `true` if the file was found and updated, otherwise `false`.
    */
   static updatePrism(prism: Prism): boolean {
-    const found = this.prisms.find(p => p.name === prism.name)
+    const found = this.getPrism(prism.name)
     if (found) {
       PrismFileSystem.savePrismFile(prism)
       return true
@@ -248,12 +252,11 @@ export class PrismManager {
   static async deletePrism(prism: Prism): Promise<void> {
     if (!PrismFileSystem.isPrismFileExists(prism.name)) {
       vscode.window.showWarningMessage('The prism does not exist.')
-      return
+    } else {
+      await PrismFileSystem.deletePrismFile(prism.name)
     }
 
-    await PrismFileSystem.deletePrismFile(prism.name)
-
-    const deletingPrism = this.prisms.find(p => p.name === prism.name)
+    const deletingPrism = this.getPrism(prism.name)
     if (deletingPrism) {
       this.publish('delete-prism', { prism: deletingPrism })
       this.prisms = this.prisms.filter(p => p.name !== prism.name)
@@ -268,7 +271,7 @@ export class PrismManager {
    */
   static getIssue(issueId: string): Issue | undefined {
     for (const prism of this.prisms) {
-      const issue = prism.issues.find(i => i.id === issueId)
+      const issue = prism.getIssue(issueId)
       if (issue) {
         return issue
       }
@@ -307,6 +310,23 @@ export class PrismManager {
       assert.ok(issue.prism, 'deleteIssue: issue does not have a prism property')
       issue.prism.removeIssue(issue.id)
       PrismFileSystem.savePrismFile(issue.prism)
+    }
+  }
+
+  /**
+   * Iterates over all issues in all prisms and applies the provided callback function to each issue.
+   * If the callback function returns `true` for any issue, the iteration stops.
+   *
+   * @param callback - A function that takes an `Issue` object as an argument and returns a boolean.
+   *                   If the function returns `true`, the iteration stops.
+   */
+  static travelIssues(callback: (issue: Issue) => boolean) {
+    for (const prism of this.prisms) {
+      for (const issue of prism.issues) {
+        if (callback(issue)) {
+          return
+        }
+      }
     }
   }
 

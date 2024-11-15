@@ -8,9 +8,9 @@
       "title": "`const prismTreeView = vscode.window.createTreeView('CodePrism.view.prismView', {` at src\\code-prism\\PrismCommands.ts#38",
       "source": {
         "file": "/src/code-prism/PrismCommands.ts",
-        "startLine": 38,
+        "startLine": 39,
         "startColumn": 2,
-        "endLine": 41,
+        "endLine": 42,
         "endColumn": 4
       },
       "notes": [
@@ -28,9 +28,9 @@
       "title": "`vscode.workspace.onDidChangeTextDocument(changeEvent => {` at src\\code-prism\\PrismCommands.ts#50",
       "source": {
         "file": "/src/code-prism/PrismCommands.ts",
-        "startLine": 50,
+        "startLine": 51,
         "startColumn": 0,
-        "endLine": 50,
+        "endLine": 51,
         "endColumn": 0
       },
       "notes": [

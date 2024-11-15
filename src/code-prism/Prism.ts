@@ -20,7 +20,8 @@ export function uuid(): string {
  * Note은 단일 정보를 의미하며 텍스트와 Link등으로 하나의 정보를 표현한다.
  *
  * @remarks
- * Prism 개체는 `new Prism()`으로 생성하면 안된다. `PrismManager.createPrism()`을 사용해야 한다.
+ * Prism 개체는 `new Prism()`으로 생성하면 안된다.
+ * `PrismManager.createPrismAndFile()`을 사용해야 한다.
  *
  * @class
  * @property {string} ver - The version of the Prism.

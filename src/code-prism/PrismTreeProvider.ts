@@ -303,6 +303,8 @@ export class PrismTreeProvider implements vscode.TreeDataProvider<PrismTreeViewE
    * - `delete-prism`: Deletes an existing prism from the provider.
    * - `append-issue`: Appends a issue to an existing prism.
    * - `remove-issue`: Removes a issue from an existing prism.
+   * - `update-note`: updates a note from an existing issue.
+   * - `remove-note`: Removes a note from an existing issue.
    */
   register() {
     // vscode.window.registerTreeDataProvider('CodePrism.view.prismView', this)

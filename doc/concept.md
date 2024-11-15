@@ -13,7 +13,7 @@
 Prism, Issue, Note는 `Prism.ts`파일에 정의되어져 있으며 Json 형식으로 `.prism.json` 확장자를 가지는 파일로 저장된다.
 
 🚨 Prism 개체는 `new Prism()`으로 생성하면 안된다. 🚨  
-`PrismManager.createPrism(prismName)`을 사용해야 한다. 이때 인수 prismName은 일반적으로 prism 개체의 대상이 되는 문서 파일의 이름이다. 이 이름은 프리즘 개체를 구분하는 ID가 되기 때문에 고유해야 한다.
+`PrismManager.createPrismAndFile(prismName)`을 사용해야 한다. 이때 인수 prismName은 일반적으로 prism 개체의 대상이 되는 문서 파일의 이름이다. 이 이름은 프리즘 개체를 구분하는 ID가 되기 때문에 고유해야 한다.
 
 ### publish-subscribe pattern
 

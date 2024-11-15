@@ -17,6 +17,17 @@ export namespace PrismDocDetector {
     content: string
   }
 
+  const linkedFilesMap: Map<string, string[]> = new Map()
+
+  /**
+   * 현재 방식은 처음 참조될 때 검색하고 저장했다가 다음에 참조될 때는 저장된 값을 사용하는 방식이다.
+   * 이 방식은 이미 참조되어진 후에 변경되면 변경 내용이 반영이 되지는 않는 문제가 있기 때문에
+   * 새로 document를 만드는 경우에는 이 함수를 호출하여 linkedFilesMap을 초기화해주어야 한다.
+   */
+  export function clear() {
+    linkedFilesMap.clear()
+  }
+
   /**
    * Activates the document detector extension.
    *
@@ -46,12 +57,10 @@ export namespace PrismDocDetector {
      * The linked documents' URIs are adjusted if they are relative paths, and their content is retrieved.
      */
     const getLinkedDocInfo = async (uri: vscode.Uri): Promise<LinkedDoc[]> => {
-      const linkedFiles: string[] = []
-
-      //todo 이렇게 매번 계산하면 안된다.
-      // uri를 소스로 하는 모든 issue에서 언급된 파일들을 모두 리턴한다.
-      PrismManager.getAllPrisms().forEach(prism => {
-        prism.issues.forEach(issue => {
+      const linkedFiles: string[] = linkedFilesMap.get(uri.fsPath) || []
+      if (linkedFiles.length === 0) {
+        // uri를 소스로 하는 모든 issue에서 언급된 파일들을 모두 리턴한다.
+        PrismManager.travelIssues(issue => {
           const path = vscode.Uri.file(PrismPath.getAbsolutePath(issue.source.file))
           if (path.fsPath === uri.fsPath) {
             issue.notes.forEach(note => {
@@ -60,8 +69,10 @@ export namespace PrismDocDetector {
               }
             })
           }
+          return false
         })
-      })
+        linkedFilesMap.set(uri.fsPath, linkedFiles)
+      }
 
       // result에서 현재 소스 파일과 연관된 파일들을 찾아서 linkedDocs에 저장한다.
       const prismFolder = PrismPath.getPrismFolderPath()

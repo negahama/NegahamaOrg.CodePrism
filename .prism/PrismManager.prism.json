@@ -28,10 +28,10 @@
       "title": "`static async deletePrism(prism: Prism): Promise<void> {` at src\\code-prism\\PrismManager.ts#267",
       "source": {
         "file": "/src/code-prism/PrismManager.ts",
-        "startLine": 268,
-        "startColumn": 0,
-        "endLine": 268,
-        "endColumn": 0
+        "startLine": 252,
+        "startColumn": 15,
+        "endLine": 252,
+        "endColumn": 26
       },
       "notes": [
         {
@@ -48,9 +48,9 @@
       "title": "`static findPrismBySource(source: string): Prism | undefined {` at src\\code-prism\\PrismManager.ts#289",
       "source": {
         "file": "/src/code-prism/PrismManager.ts",
-        "startLine": 289,
+        "startLine": 292,
         "startColumn": 9,
-        "endLine": 289,
+        "endLine": 292,
         "endColumn": 9
       },
       "notes": [

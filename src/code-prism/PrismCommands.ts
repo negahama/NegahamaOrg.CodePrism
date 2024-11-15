@@ -5,6 +5,7 @@ import { Issue } from './Prism'
 import { PrismManager } from './PrismManager'
 import { PrismComment, PrismCommentController } from './PrismCommentController'
 import { PrismItem, IssueItem, PrismTreeViewElement, PrismTreeProvider } from './PrismTreeProvider'
+import { PrismDocDetector } from './PrismDocDetector'
 import { PrismFileViewer } from './PrismFileViewer'
 import { output } from './PrismOutputChannel'
 
@@ -253,6 +254,7 @@ export async function prism_activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand('CodePrism.command.note.makeMarkdown', (comment: PrismComment) => {
       commentController.makeMarkdown(comment)
+      PrismDocDetector.clear()
     })
   )
 
