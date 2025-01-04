@@ -342,7 +342,6 @@ export class Issue {
  * @property {number} startColumn - The starting column number of the source code.
  * @property {number} endLine - The ending line number of the source code.
  * @property {number} endColumn - The ending column number of the source code.
- * @property {string} [link] - An optional link associated with the source code.
  */
 export interface Source {
   file: string
@@ -350,7 +349,6 @@ export interface Source {
   startColumn: number
   endLine: number
   endColumn: number
-  link?: string
 }
 
 /**

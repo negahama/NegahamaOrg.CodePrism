@@ -42,6 +42,26 @@
           "content": "reactionHandler code... 나중 참고용으로 남겨둔다.\r\n\r\n```ts\r\nthis.commentController.reactionHandler = (\r\n  comment: vscode.Comment,\r\n  reaction: vscode.CommentReaction\r\n): Thenable<void> => {\r\n  vscode.window.showInformationMessage('reaction: ' + reaction.label)\r\n  return Promise.resolve()\r\n}\r\n```\r\n"
         }
       ]
+    },
+    {
+      "id": "6e30423d554045909521755c26a58b1b",
+      "title": "`const prismName = path.parse(source).name` at src\\code-prism\\PrismCommentController.ts#278",
+      "source": {
+        "file": "/src/code-prism/PrismCommentController.ts",
+        "startLine": 278,
+        "startColumn": 0,
+        "endLine": 278,
+        "endColumn": 0
+      },
+      "notes": [
+        {
+          "id": "b6fc5585fb52ca6a2c66e17668514a71",
+          "category": "Todo",
+          "importance": "Medium",
+          "createdAt": "2024-11-19T09:20:12.778Z",
+          "content": "때때로 확장자가 중요한 경우도 있다..."
+        }
+      ]
     }
   ]
 }

@@ -64,7 +64,7 @@ export async function prism_activate(context: vscode.ExtensionContext) {
         // select만 해도 발생한다. 이 경우는 처리하지 않는다.
         return
       } else if (change.text.length > 0 && change.rangeLength === 0) {
-        // 텍스트가 추가되었을 때 (change.text는 추된 텍스트)
+        // 텍스트가 추가되었을 때 (change.text는 추가된 텍스트)
         // 텍스트 추가인 경우에도 라인이 추가되는 경우가 아니면 처리하지 않는다.
         if (!change.text.includes('\n')) {
           return

@@ -144,10 +144,10 @@ export namespace PrismAdaptiveLinkDetector {
 
     readAdaptiveLinkFile()
 
-    // 종료 시에만 저장한다
+    // 종료 시에만 저장하려 했었는데 은근 불편해서 변경되면 바로 바로 저장하는 걸로 변경함
     context.subscriptions.push({
       dispose: () => {
-        saveAdaptiveLinkFile()
+        // saveAdaptiveLinkFile()
       },
     })
 
@@ -173,7 +173,7 @@ export namespace PrismAdaptiveLinkDetector {
           // select만 해도 발생한다. 이 경우는 처리하지 않는다.
           return
         } else if (change.text.length > 0 && change.rangeLength === 0) {
-          // 텍스트가 추가되었을 때 (change.text는 추된 텍스트)
+          // 텍스트가 추가되었을 때 (change.text는 추가된 텍스트)
           // 텍스트 추가인 경우에도 라인이 추가되는 경우가 아니면 처리하지 않는다.
           if (!change.text.includes('\n')) {
             return
@@ -232,10 +232,10 @@ export namespace PrismAdaptiveLinkDetector {
         })
       })
 
-      // 종료 시에만 저장한다
-      // if (needUpdate) {
-      //   saveAdaptiveLinkFile()
-      // }
+      // 종료 시에만 저장하려 했었는데 은근 불편해서 변경되면 바로 바로 저장하는 걸로 변경함
+      if (needUpdate) {
+        saveAdaptiveLinkFile()
+      }
     })
 
     context.subscriptions.push(
@@ -252,8 +252,9 @@ export namespace PrismAdaptiveLinkDetector {
         vscode.env.clipboard.writeText(link)
 
         appendLink(name, PrismPath.getAbsolutePath(path2), range.start.line + 1, range.end.line + 1)
-        // 종료 시에만 저장한다
-        // saveAdaptiveLinkFile()
+
+        // 종료 시에만 저장하려 했었는데 은근 불편해서 변경되면 바로 바로 저장하는 걸로 변경함
+        saveAdaptiveLinkFile()
       })
     )
 
@@ -283,10 +284,7 @@ export namespace PrismAdaptiveLinkDetector {
                 continue
               }
 
-              const file = vscode.Uri.from({
-                ...vscode.Uri.file(info.fileName),
-                fragment: `${info.startLine}-${info.endLine}`,
-              })
+              const file = vscode.Uri.file(info.fileName).with({ fragment: `${info.startLine}-${info.endLine}` })
 
               const link = new vscode.DocumentLink(range, file)
               links.push(link)
@@ -325,10 +323,7 @@ export namespace PrismAdaptiveLinkDetector {
             }
 
             const content = await PrismFileSystem.getDocContent(
-              vscode.Uri.from({
-                ...vscode.Uri.file(info.fileName),
-                fragment: `${info.startLine}-${info.endLine}`,
-              })
+              vscode.Uri.file(info.fileName).with({ fragment: `${info.startLine}-${info.endLine}` })
             )
 
             // [[al=b930919781f46cfb8bd787d7abd05731]]

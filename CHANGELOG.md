@@ -4,6 +4,11 @@ All notable changes to the "Code Prism" extension will be documented in this fil
 
 <!-- ### version - Month day, year -->
 
+### 1.4.5 - January 4, 2025
+
+- ActiveLink information was saved at the end of the program, but it is now changed to be saved as soon as the information changes
+- refactoring a lot of codes
+
 ### 1.4.4 - November 13, 2024
 
 I combined the code-anchor link and the 1+1 link to make it the adaptive link

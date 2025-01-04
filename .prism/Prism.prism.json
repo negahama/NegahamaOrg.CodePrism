@@ -23,6 +23,26 @@
           "link": "file:///./docs/16b93e0955f657263636fd3e72625814.md"
         }
       ]
+    },
+    {
+      "id": "e1142e7c03d6245ad2ae07335064b81c",
+      "title": "`importance: string` at src\\code-prism\\Prism.ts#371",
+      "source": {
+        "file": "/src/code-prism/Prism.ts",
+        "startLine": 369,
+        "startColumn": 0,
+        "endLine": 369,
+        "endColumn": 0
+      },
+      "notes": [
+        {
+          "id": "db2c7ba3c18ba68c901d4dd119e31707",
+          "category": "Todo",
+          "importance": "Medium",
+          "createdAt": "2024-11-15T12:24:42.830Z",
+          "content": "현재 이게 처리되지 않고 있으며 content를 문자열의 배열로 바꾸는 것에 대해서 생각해 봐야 한다."
+        }
+      ]
     }
   ]
 }

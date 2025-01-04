@@ -195,11 +195,7 @@ export namespace PrismLinkDetector {
               // const link = new vscode.DocumentLink(range, vscode.Uri.file(path))
               const link = new vscode.DocumentLink(
                 range,
-                vscode.Uri.from({
-                  ...vscode.Uri.file(result.fileName),
-                  // query: url.query,
-                  fragment: result.fragment,
-                })
+                vscode.Uri.file(result.fileName).with({ fragment: result.fragment })
               )
               links.push(link)
               decos.push(range)
@@ -250,8 +246,8 @@ export namespace PrismLinkDetector {
               return
             }
 
-            const uri = vscode.Uri.file(result.fileName)
-            const content = await PrismFileSystem.getDocContent(vscode.Uri.from({ ...uri, fragment: result.fragment }))
+            const uri = vscode.Uri.file(result.fileName).with({ fragment: result.fragment })
+            const content = await PrismFileSystem.getDocContent(uri)
 
             let link: string = ''
             if (result.fileName.endsWith('.md')) {
